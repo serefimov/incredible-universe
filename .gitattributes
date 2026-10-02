@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+# Не нормализовать и не менять оригинальный прототип.
+prototypes/spike_0_3.html -text
