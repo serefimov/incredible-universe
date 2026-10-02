@@ -1,3 +1,7 @@
 {
-  "entrypoint": "prototypes/spike_0_3.html"
+  "entrypoint": "index.html",
+  "bundle": {
+    "script": "src/main.js",
+    "style": "src/styles.css"
+  }
 }

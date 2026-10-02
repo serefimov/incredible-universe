@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>The Incredible Universe — прототип</title>
+<link rel="stylesheet" href="./src/styles.css">
+</head>
+<body>
+<div id="wrap">
+ <div id="top">
+  <div id="title">The Incredible Universe</div>
+  <div id="status">t = 0</div>
+  <button id="follow">🎯 Корабль</button>
+  <button id="play" aria-label="Запустить симуляцию" title="Запустить симуляцию">▶</button>
+  <button id="reset" aria-label="Вернуться к начальным условиям" title="Вернуться к начальным условиям">↻</button>
+ </div>
+ <div id="stage">
+  <canvas id="c" aria-label="Карта Вселенной"></canvas>
+  <div id="hint"><b>До запуска:</b> тащи пустое место одним пальцем — двигай карту; колёсико/щипок — масштаб. Тела из ящика можно переставлять. <b>После ▶ камера следует за кораблём.</b></div>
+ </div>
+ <div id="tray">
+   <div class="card" data-type="planet"><div class="icon">🌍</div><small>ПЛАНЕТА</small></div>
+   <div class="card" data-type="giant"><div class="icon">🪐</div><small>ГИГАНТ</small></div>
+   <div class="card" data-type="star"><div class="icon">⭐</div><small>ЗВЕЗДА</small></div>
+   <div id="trayText"><span class="accent">v₀ = 0</span> у всех добавленных тел.<br>↻ сохраняет расстановку.<br>Тело можно вернуть в ящик.</div>
+ </div>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body></html>

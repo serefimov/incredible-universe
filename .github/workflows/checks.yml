@@ -20,6 +20,5 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
-      - run: node tools/audit-spike.mjs
-      - run: node tools/build-pages.mjs --check
-      - run: node --test tools/build-pages.test.mjs
+      - run: npm ci
+      - run: npm run check
