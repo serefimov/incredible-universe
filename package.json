@@ -13,6 +13,6 @@
     "check": "node tools/audit-spike.mjs && node tools/build-pages.mjs --check && npm test && npm run build"
   },
   "devDependencies": {
-    "esbuild": "0.27.3"
+    "esbuild": "0.28.2"
   }
 }
