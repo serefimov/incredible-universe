@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { createGame, resetGame, startGame } from './state.js';
-import { advanceFrame } from './physics.js';
+import { advanceFrame, discardFrameTime } from './physics.js';
 import { followShip } from './camera.js';
 import { createRenderer } from './render.js';
 import { createInput } from './input.js';
@@ -17,7 +17,8 @@ function updateUI() {
   play.disabled = simulation.status !== 'ready';
   hint.hidden = simulation.status !== 'ready';
   follow.textContent = game.camera.follow ? '🎯 Слежение' : '🎯 Корабль';
-  status.textContent = simulation.status === 'collision' ? '💥 столкновение' :
+  status.textContent = simulation.status === 'error' ? '⚠ ошибка симуляции — нажмите Reset' :
+    simulation.status === 'collision' ? '💥 столкновение' :
     simulation.status === 'ready' ? 't = 0' :
       `t = ${simulation.time.toFixed(1)}  v=${Math.hypot(simulation.ship.vx, simulation.ship.vy).toFixed(0)}`;
   for (const card of cards) {
@@ -45,8 +46,12 @@ follow.addEventListener('click', () => {
   }
   updateUI();
 });
+document.addEventListener('visibilitychange', () => {
+  last = performance.now();
+  discardFrameTime(game.simulation);
+});
 function frame(now) {
-  if (game.simulation.status === 'running') {
+  if (game.simulation.status === 'running' && !document.hidden) {
     advanceFrame(game.simulation, game.scenario.physics, (now - last) / 1000);
     last = now;
     followShip(game.camera, game.simulation.ship);
@@ -59,3 +64,4 @@ renderer.resize();
 new ResizeObserver(() => renderer.resize()).observe(stage);
 updateUI();
 requestAnimationFrame(frame);
+

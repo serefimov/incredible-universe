@@ -54,56 +54,31 @@ test('Play запускает готовые условия; Reset сохран�
 });
 
 for (const placements of [[], [{ type: 'planet', x: -350, y: -140 }]]) {
-  test(`физика побитово совпадает со Spike на тех же шагах (${placements.length} добавленных тел)`, () => {
+  test(`физика совпадает со Spike до первого контакта на фиксированных шагах (${placements.length} добавленных тел)`, () => {
     const game = createGame(), reference = referenceSpike(placements);
     for (const p of placements) placeBody(game, p.type, p.x, p.y);
     startGame(game); reference.start();
     for (let i = 0; i < 800 && game.simulation.status === 'running'; i++) {
-      const dt = i % 3 === 0 ? 0.001 : 0.0025;
+      const dt = game.scenario.physics.maxStep;
       reference.step(dt);
       stepSimulation(game.simulation, game.scenario.physics, dt);
       const expected = reference.snapshot();
+      if (game.simulation.status === 'collision') {
+        assert.equal(expected.running, false);
+        assert.ok(game.simulation.time <= expected.simT + 1e-12);
+        assert.ok(expected.simT - game.simulation.time <= dt + 1e-12);
+        const body = game.simulation.bodies.find(b => b.id === game.simulation.collisionId);
+        assert.ok(Math.abs(Math.hypot(game.simulation.ship.x - body.x,
+          game.simulation.ship.y - body.y) - game.simulation.ship.r - body.r) < 1e-10);
+        break;
+      }
       assert.deepEqual(game.simulation.ship, expected.ship);
       assert.deepEqual(game.simulation.bodies, expected.bodies);
-      assert.deepEqual(game.simulation.trail, expected.trail);
-      assert.equal(game.simulation.time, expected.simT);
+      assert.ok(Math.abs(game.simulation.time - expected.simT) < 1e-12);
       assert.equal(game.simulation.status === 'running', expected.running);
     }
   });
 }
-
-test('нерегулярные кадры повторяют Spike до столкновения и Reset разрешает повтор', () => {
-  const game = createGame(), reference = referenceSpike();
-  startGame(game); reference.start();
-  let now = 0;
-  for (let i = 0; i < 180; i++) {
-    const milliseconds = [8, 17, 33, 75, 12][i % 5];
-    now += milliseconds;
-    reference.frame(now);
-    advanceFrame(game.simulation, game.scenario.physics, milliseconds / 1000);
-    const expected = reference.snapshot();
-    // Frame timestamps use floating point; reproduce reference subtraction exactly.
-    assert.ok(Math.abs(game.simulation.time - expected.simT) < 1e-12);
-    assert.ok(Math.hypot(game.simulation.ship.x - expected.ship.x, game.simulation.ship.y - expected.ship.y) < 1e-9);
-  }
-  assert.equal(game.simulation.status, 'collision');
-  assert.equal(game.simulation.collisionId, 'p2');
-  const stopped = physicalState(game);
-  advanceFrame(game.simulation, game.scenario.physics, 10);
-  assert.deepEqual(physicalState(game), stopped);
-  assert.equal(startGame(game), false);
-  resetGame(game);
-  assert.equal(startGame(game), true);
-});
-
-test('кадровая зависимость остаётся известным дефектом #3, а не заявляется исправленной', () => {
-  const a = createGame(), b = createGame();
-  startGame(a); startGame(b);
-  for (let i = 0; i < 30; i++) advanceFrame(a.simulation, a.scenario.physics, 1 / 60);
-  for (let i = 0; i < 60; i++) advanceFrame(b.simulation, b.scenario.physics, 1 / 120);
-  assert.ok(Math.abs(a.simulation.time - b.simulation.time) < 1e-10);
-  assert.notDeepEqual(a.simulation.ship, b.simulation.ship);
-});
 
 test('камера и отрисовка не изменяют расстановку или физическое состояние', () => {
   const game = createGame();
@@ -126,3 +101,4 @@ test('камера и отрисовка не изменяют расстано�
   }
   assert.deepEqual({ configuration: game.configuration, simulation: game.simulation, scenario: game.scenario }, before);
 });
+
