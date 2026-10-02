@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { bundleHTML, validSourcePath } from './build-game.mjs';
 
 const versionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const tagPattern = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -17,14 +18,17 @@ function metadata(read, expectedVersion) {
   if (!changelog.split(/\r?\n/).some(line => line === `## ${version}`)) {
     throw new Error(`В CHANGELOG.md нет раздела ## ${version}`);
   }
-  const { entrypoint } = JSON.parse(read('release.json'));
-  if (typeof entrypoint !== 'string' || !/^[a-zA-Z0-9_/-]+\.html$/.test(entrypoint) ||
-      entrypoint.startsWith('/') || entrypoint.split('/').some(part => !part)) {
+  const { entrypoint, bundle } = JSON.parse(read('release.json'));
+  if (!validSourcePath(entrypoint) || !entrypoint.endsWith('.html')) {
     throw new Error('release.json должен указывать относительный путь к HTML');
   }
   const html = read(entrypoint);
   if (!/<!doctype html/i.test(html.toString())) throw new Error('Точка входа не является HTML');
-  return { version, entrypoint, html, changelog, license: read('LICENSE') };
+  if (bundle && (!validSourcePath(bundle.script) || !bundle.script.endsWith('.js') ||
+      !validSourcePath(bundle.style) || !bundle.style.endsWith('.css'))) {
+    throw new Error('Некорректный bundle в release.json');
+  }
+  return { version, entrypoint, bundle, html, changelog, license: read('LICENSE') };
 }
 
 export function checkWorkingTree(repo) {
@@ -50,7 +54,8 @@ export async function buildPages(repo, output, { requiredTag, mainRef } = {}) {
     throw new Error('Нет тегов выпуска или отсутствует тег запуска');
   }
   // Сначала проверяем все версии: ошибочный тег не должен дать частичный сайт.
-  const releases = tags.map(tag => {
+  const releases = [];
+  for (const tag of tags) {
     if (mainRef) git(repo, 'merge-base', '--is-ancestor', tag, mainRef);
     const read = path => {
       const treeEntry = git(repo, 'ls-tree', tag, '--', path).toString();
@@ -59,8 +64,11 @@ export async function buildPages(repo, output, { requiredTag, mainRef } = {}) {
       }
       return git(repo, 'show', `${tag}:${path}`);
     };
-    return { tag, ...metadata(read, tag.slice(1)), commit: git(repo, 'rev-parse', `${tag}^{commit}`).toString().trim() };
-  }).sort(compareVersions);
+    const release = metadata(read, tag.slice(1));
+    release.html = await bundleHTML(release.html, release.bundle, read);
+    releases.push({ tag, ...release, commit: git(repo, 'rev-parse', `${tag}^{commit}`).toString().trim() });
+  }
+  releases.sort(compareVersions);
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
   for (const release of releases) {

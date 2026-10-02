@@ -86,3 +86,29 @@ test('не публикует нерелизные теги и отказыва�
   await assert.rejects(buildPages(f.repo, f.output, { requiredTag: 'v0.2.0-rc.1' }), /формат/);
   await assert.rejects(buildPages(f.repo, f.output, { requiredTag: 'v9.0.0' }), /Нет тегов/);
 });
+
+test('публикует модульную игру из нового тега, сохраняя старый standalone выпуск', async t => {
+  const f = await fixture(t);
+  const old = '<!doctype html><p>old-release</p>';
+  await f.release('0.1.0', old);
+  await writeFile(resolve(f.repo, 'VERSION'), '0.2.0\n');
+  await writeFile(resolve(f.repo, 'CHANGELOG.md'), '## 0.2.0\n');
+  await writeFile(resolve(f.repo, 'release.json'), JSON.stringify({ entrypoint: 'game.html',
+    bundle: { script: 'main.js', style: 'style.css' } }));
+  await writeFile(resolve(f.repo, 'game.html'), '<!doctype html><link rel="stylesheet" href="./style.css"><script type="module" src="./main.js"></script>');
+  await writeFile(resolve(f.repo, 'main.js'), 'import { message } from "./data.js"; console.log(message);');
+  await writeFile(resolve(f.repo, 'data.js'), 'export const message = "tag-version-0.2.0";');
+  await writeFile(resolve(f.repo, 'style.css'), 'body { color: red; }');
+  f.git('add', '.');
+  f.git('commit', '-m', '#2 подготовил тестовую модульную игру');
+  f.git('tag', '-a', 'v0.2.0', '-m', 'Version 0.2.0');
+  // The working copy is deliberately different from the release source.
+  await writeFile(resolve(f.repo, 'data.js'), 'export const message = "working-copy";');
+  const result = await buildPages(f.repo, f.output, { requiredTag: 'v0.2.0', mainRef: 'main' });
+  assert.equal(result.latest, '0.2.0');
+  assert.equal(await readFile(resolve(f.output, '0.1.0/index.html'), 'utf8'), old);
+  const html = await readFile(resolve(f.output, '0.2.0/index.html'), 'utf8');
+  assert.match(html, /tag-version-0.2.0/);
+  assert.ok(!html.includes('working-copy'));
+  assert.ok(!html.includes('src="./main.js"'));
+});
