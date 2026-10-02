@@ -28,7 +28,7 @@ function dom() {
         preventDefault() {}, ...values }); },
     };
   }
-  const nodes = Object.fromEntries(['c', 'stage', 'tray', 'play', 'reset', 'follow', 'status', 'hint']
+  const nodes = Object.fromEntries(['c', 'stage', 'tray', 'play', 'reset', 'follow', 'status', 'hint', 'earth-time', 'ship-time']
     .map(id => [id, element(id)]));
   const cards = ['planet', 'giant', 'star'].map(type => element('card', type));
   const document = { hidden: false, getElementById: id => nodes[id], querySelectorAll: () => cards,

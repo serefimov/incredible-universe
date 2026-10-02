@@ -1,59 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Accepted #6 clock contract experiment. Game integration belongs to #7.
+// Accepted clock contract witness, executed by the real game simulation.
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { createGame, startGame } from '../../src/state.js';
 import { advanceFrame } from '../../src/physics.js';
 
-export const CLOCK_CONTRACT = Object.freeze({
-  version: 'potential-kinematic-v1', lightSpeed: 1000, yearsPerUnit: 100,
-});
-
-// Plummer potential: its negative gradient is the acceleration used by #3.
-// All gravitational source bodies contribute; the probe ship is not a source.
-export function potentialAt(point, bodies, model) {
-  if (![point.x, point.y, model.gravity, model.softening].every(Number.isFinite) ||
-      model.gravity < 0 || model.softening <= 0) throw new RangeError('Некорректное поле');
-  let potential = 0;
-  for (const body of bodies) {
-    if (![body.x, body.y, body.m].every(Number.isFinite) || body.m < 0) {
-      throw new RangeError('Некорректный источник поля');
-    }
-    const distance = Math.hypot(point.x - body.x, point.y - body.y, model.softening);
-    if (!Number.isFinite(distance)) throw new RangeError('Переполнение расстояния');
-    potential -= model.gravity * body.m / distance;
-  }
-  if (!Number.isFinite(potential)) throw new RangeError('Переполнение потенциала');
-  return potential;
-}
-
-// Explicit GAME clock law, not a Schwarzschild/Einstein solution.
-// exp(phi/c²) matches 1 + phi/c² in a weak stationary field.
-export function clockRate(vx, vy, potential = 0, clock = CLOCK_CONTRACT) {
-  if (![vx, vy, potential, clock.lightSpeed, clock.yearsPerUnit].every(Number.isFinite) ||
-      clock.lightSpeed <= 0 || clock.yearsPerUnit <= 0 || potential > 0) {
-    throw new RangeError('Некорректные параметры часов');
-  }
-  const beta = Math.hypot(vx, vy) / clock.lightSpeed;
-  if (beta >= 1) throw new RangeError('Скорость наблюдателя должна быть меньше c');
-  const depth = -potential / clock.lightSpeed / clock.lightSpeed;
-  const rate = Math.exp(-depth) * Math.sqrt((1 - beta) * (1 + beta));
-  if (!Number.isFinite(rate) || rate <= 0) throw new RangeError('Часы вышли за численный диапазон');
-  return rate;
-}
-
-export function clockIncrement(vx, vy, duration, clock = CLOCK_CONTRACT,
-  { shipPotential = 0, earthPotential = 0, earthVx = 0, earthVy = 0 } = {}) {
-  if (!Number.isFinite(duration) || duration < 0) throw new RangeError('Некорректный интервал');
-  const shipRate = clockRate(vx, vy, shipPotential, clock);
-  const earthRate = clockRate(earthVx, earthVy, earthPotential, clock);
-  const coordinateYears = clock.yearsPerUnit * duration;
-  const earth = coordinateYears * earthRate;
-  const ship = coordinateYears * shipRate;
-  if (![coordinateYears, earth, ship].every(Number.isFinite) ||
-      (duration > 0 && (earth <= 0 || ship <= 0))) throw new RangeError('Переполнение или потеря точности часов');
-  return { earth, ship };
-}
+import { CLOCK_CONTRACT, clockIncrement, potentialAt } from '../../src/clocks.js';
+export { CLOCK_CONTRACT, clockIncrement, clockRate, potentialAt } from '../../src/clocks.js';
 
 export function witnessScenario(step = 0.0025, playbackScale = 0.1) {
   const radius = 90, mass = 12250, gravity = 7200, softening = 16;
@@ -72,14 +25,12 @@ export function witnessScenario(step = 0.0025, playbackScale = 0.1) {
 export function runWitness({ step = 0.0025, playbackScale = 0.1 } = {}) {
   const scenario = witnessScenario(step, playbackScale);
   const game = createGame(scenario); startGame(game);
-  let shipYears = 0, earthYears = 0, previousY = 0, returns = 0;
-  let shipCorrection = 0, earthCorrection = 0;
+  let previousY = 0, returns = 0;
   let minShipPotential = 0, maxShipPotential = -Infinity;
   let minSpeed = Infinity, maxSpeed = 0, minRadius = Infinity;
   const maxTicks = Math.ceil(12 / step);
   for (let tick = 0; tick < maxTicks; tick++) {
     const s = game.simulation;
-    const previousTime = s.time;
     const previousShip = { ...s.ship };
     const previousBodies = s.bodies.map(body => ({ ...body }));
     // Feed one physical tick per frame through the real frame scheduler.
@@ -92,14 +43,7 @@ export function runWitness({ step = 0.0025, playbackScale = 0.1 } = {}) {
     const midpointBodies = s.bodies.map((body, i) => ({ ...body,
       x: (previousBodies[i].x + body.x) / 2, y: (previousBodies[i].y + body.y) / 2 }));
     const shipPotential = potentialAt(midpoint, midpointBodies, scenario.physics);
-    const earthPotential = potentialAt(scenario.earthClock, midpointBodies, scenario.physics);
-    const increment = clockIncrement(s.ship.vx, s.ship.vy, s.time - previousTime, CLOCK_CONTRACT,
-      { shipPotential, earthPotential, earthVx: scenario.earthClock.vx, earthVy: scenario.earthClock.vy });
-    // Compensated sums; display rounding never feeds back into the clocks.
-    const shipDelta = increment.ship - shipCorrection, nextShipYears = shipYears + shipDelta;
-    shipCorrection = (nextShipYears - shipYears) - shipDelta; shipYears = nextShipYears;
-    const earthDelta = increment.earth - earthCorrection, nextEarthYears = earthYears + earthDelta;
-    earthCorrection = (nextEarthYears - earthYears) - earthDelta; earthYears = nextEarthYears;
+    const { earthYears, shipYears } = s;
     minShipPotential = Math.min(minShipPotential, shipPotential);
     maxShipPotential = Math.max(maxShipPotential, shipPotential);
     minSpeed = Math.min(minSpeed, speed); maxSpeed = Math.max(maxSpeed, speed);

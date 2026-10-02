@@ -9,6 +9,7 @@ const element = id => document.getElementById(id);
 const canvas = element('c'), stage = element('stage');
 const play = element('play'), reset = element('reset'), follow = element('follow');
 const status = element('status'), hint = element('hint');
+const earthTime = element('earth-time'), shipTime = element('ship-time');
 const cards = [...document.querySelectorAll('.card')];
 const game = createGame();
 const renderer = createRenderer(canvas, stage);
@@ -19,8 +20,10 @@ function updateUI() {
   follow.textContent = game.camera.follow ? '🎯 Слежение' : '🎯 Корабль';
   status.textContent = simulation.status === 'error' ? '⚠ ошибка симуляции — нажмите Reset' :
     simulation.status === 'collision' ? '💥 столкновение' :
-    simulation.status === 'ready' ? 't = 0' :
-      `t = ${simulation.time.toFixed(1)}  v=${Math.hypot(simulation.ship.vx, simulation.ship.vy).toFixed(0)}`;
+    simulation.status === 'ready' ? 'готово' :
+      `v=${Math.hypot(simulation.ship.vx, simulation.ship.vy).toFixed(0)}`;
+  earthTime.textContent = simulation.earthYears.toFixed(2);
+  shipTime.textContent = simulation.shipYears.toFixed(2);
   for (const card of cards) {
     const used = game.configuration.placed.some(p => p.type === card.dataset.type);
     card.classList.toggle('used', used);

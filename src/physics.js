@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+import { calculateClocks } from './clocks.js';
 export function acceleration(object, bodies, model) {
   let ax = 0, ay = 0;
   for (const body of bodies) {
@@ -90,9 +91,13 @@ export function stepSimulation(simulation, model, dt = model.maxStep) {
     y: fraction === 1 ? object.y : objects[i].y * (1 - fraction) + object.y * fraction,
   }));
   if (!committed.every(finiteObject)) { fail(simulation, 'Переполнение позиции контакта'); return; }
+  let clocks;
+  try { clocks = calculateClocks(simulation, committed, model, dt * fraction); }
+  catch (error) { fail(simulation, error.message); return; }
   for (let i = 0; i < objects.length; i++) {
     if (!objects[i].fixed) Object.assign(objects[i], committed[i]);
   }
+  Object.assign(simulation, clocks);
   simulation.steps++;
   simulation.time = time;
   if (collisionId !== null) {

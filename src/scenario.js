@@ -9,6 +9,8 @@ function freezeTree(value) {
 // Verified Spike #0.3 parameters. The level is data, not live simulation state.
 export const SPIKE_SCENARIO = freezeTree({
   id: 'spike-0.3',
+  // Reference Earth clock at the starting point; no new gravitating planet.
+  earthClock: { x: -700, y: 130, vx: 0, vy: 0 },
   physics: { version: 'fixed-euler-swept-v1', gravity: 7200, softening: 16, maxStep: 0.0025, timeScale: 2.5, maxFrame: 0.05 },
   camera: { x: -250, y: 40, zoom: 0.72 },
   bodies: [

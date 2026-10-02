@@ -13,3 +13,8 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
 .card .icon{font-size:28px;line-height:28px}.card small{font-size:9px;color:#b9c5df}.card.used{opacity:.35}
 #trayText{min-width:145px;font-size:10px;color:#9eabc7;line-height:1.25}.accent{color:#fff}
 #follow{font-size:11px}
+
+
+#clocks{display:flex;flex-wrap:wrap;gap:4px 16px;padding:5px 10px;background:#0b1020;color:#c7d1e8;font-size:12px;font-variant-numeric:tabular-nums;flex-shrink:0}
+#clocks output{color:#fff}
+#top,#tray{flex-shrink:0}
