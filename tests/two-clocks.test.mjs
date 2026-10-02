@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { clockIncrement, clockRate, potentialAt, CLOCK_PROPOSAL, runWitness } from '../tools/experiments/two-clocks.mjs';
+import { clockIncrement, clockRate, potentialAt, CLOCK_CONTRACT, runWitness } from '../tools/experiments/two-clocks.mjs';
 
 const near = (actual, expected, tolerance = 1e-10) => assert.ok(Math.abs(actual - expected) <= tolerance,
   `${actual} != ${expected} within ${tolerance}`);
 
-test('предложение часов: покой, 0.6c, 0.8c, порог 300/100 и 0.95c', () => {
+test('контракт часов: покой, 0.6c, 0.8c, порог 300/100 и 0.95c', () => {
   for (const [beta, expected] of [[0, 300], [0.6, 240], [0.8, 180],
     [Math.sqrt(8 / 9), 100], [0.95, 93.67496997597597]]) {
-    const value = clockIncrement(beta * CLOCK_PROPOSAL.lightSpeed, 0, 3);
+    const value = clockIncrement(beta * CLOCK_CONTRACT.lightSpeed, 0, 3);
     assert.equal(value.earth, 300); near(value.ship, expected);
   }
   assert.deepEqual(clockIncrement(600, 0, 0.25), clockIncrement(0, -600, 0.25));
@@ -53,7 +53,7 @@ test('ускорение воспроизведения не меняет кон
 
 
 test('гравитация замедляет неподвижные часы относительно удалённых земных часов', () => {
-  const value = clockIncrement(0, 0, 3, CLOCK_PROPOSAL,
+  const value = clockIncrement(0, 0, 3, CLOCK_CONTRACT,
     { shipPotential: -1200000, earthPotential: 0 });
   near(value.earth, 300);
   near(value.ship, 300 * Math.exp(-1.2));
@@ -61,24 +61,24 @@ test('гравитация замедляет неподвижные часы о
 });
 
 test('одинаковое поле замедляет оба счётчика одинаково; скорость действует дополнительно', () => {
-  const rest = clockIncrement(0, 0, 3, CLOCK_PROPOSAL,
+  const rest = clockIncrement(0, 0, 3, CLOCK_CONTRACT,
     { shipPotential: -400000, earthPotential: -400000 });
   assert.equal(rest.ship, rest.earth);
   near(rest.earth, 300 * Math.exp(-0.4));
-  const moving = clockIncrement(600, 0, 3, CLOCK_PROPOSAL,
+  const moving = clockIncrement(600, 0, 3, CLOCK_CONTRACT,
     { shipPotential: -400000, earthPotential: -400000 });
   near(moving.ship / moving.earth, 0.8);
 });
 
 test('более слабое поле может дать кораблю больше лет, чем Земле', () => {
-  const value = clockIncrement(0, 0, 3, CLOCK_PROPOSAL,
+  const value = clockIncrement(0, 0, 3, CLOCK_CONTRACT,
     { shipPotential: -100000, earthPotential: -400000 });
   assert.ok(value.ship > value.earth);
   near(value.ship / value.earth, Math.exp(0.3));
 });
 
 test('замедление от поля и скорости перемножается для обоих наблюдателей', () => {
-  const value = clockIncrement(600, 0, 3, CLOCK_PROPOSAL,
+  const value = clockIncrement(600, 0, 3, CLOCK_CONTRACT,
     { shipPotential: -400000, earthPotential: -100000, earthVx: 800 });
   near(value.ship, 300 * Math.exp(-0.4) * 0.8);
   near(value.earth, 300 * Math.exp(-0.1) * 0.6);
@@ -113,7 +113,7 @@ test('ошибочное поле и исчезающее из-за underflow в
   for (const phi of [NaN, Infinity, -Infinity, 1, -1e12]) {
     assert.throws(() => clockRate(0, 0, phi), RangeError);
   }
-  assert.throws(() => clockIncrement(0, 0, 1, CLOCK_PROPOSAL, { earthVx: 1000 }), RangeError);
+  assert.throws(() => clockIncrement(0, 0, 1, CLOCK_CONTRACT, { earthVx: 1000 }), RangeError);
   assert.throws(() => potentialAt({ x: 0, y: 0 }, [{ x: 0, y: 0, m: -1 }],
     { gravity: 7200, softening: 16 }), RangeError);
 });

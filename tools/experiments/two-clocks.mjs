@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Proposal for #6 only. Not imported by the game; adoption requires owner choice.
+// Accepted #6 clock contract experiment. Game integration belongs to #7.
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { createGame, startGame } from '../../src/state.js';
 import { advanceFrame } from '../../src/physics.js';
 
-export const CLOCK_PROPOSAL = Object.freeze({
-  version: 'potential-kinematic-clock-proposal-v2', lightSpeed: 1000, yearsPerUnit: 100,
+export const CLOCK_CONTRACT = Object.freeze({
+  version: 'potential-kinematic-v1', lightSpeed: 1000, yearsPerUnit: 100,
 });
 
 // Plummer potential: its negative gradient is the acceleration used by #3.
@@ -29,7 +29,7 @@ export function potentialAt(point, bodies, model) {
 
 // Explicit GAME clock law, not a Schwarzschild/Einstein solution.
 // exp(phi/c²) matches 1 + phi/c² in a weak stationary field.
-export function clockRate(vx, vy, potential = 0, clock = CLOCK_PROPOSAL) {
+export function clockRate(vx, vy, potential = 0, clock = CLOCK_CONTRACT) {
   if (![vx, vy, potential, clock.lightSpeed, clock.yearsPerUnit].every(Number.isFinite) ||
       clock.lightSpeed <= 0 || clock.yearsPerUnit <= 0 || potential > 0) {
     throw new RangeError('Некорректные параметры часов');
@@ -42,7 +42,7 @@ export function clockRate(vx, vy, potential = 0, clock = CLOCK_PROPOSAL) {
   return rate;
 }
 
-export function clockIncrement(vx, vy, duration, clock = CLOCK_PROPOSAL,
+export function clockIncrement(vx, vy, duration, clock = CLOCK_CONTRACT,
   { shipPotential = 0, earthPotential = 0, earthVx = 0, earthVy = 0 } = {}) {
   if (!Number.isFinite(duration) || duration < 0) throw new RangeError('Некорректный интервал');
   const shipRate = clockRate(vx, vy, shipPotential, clock);
@@ -59,7 +59,7 @@ export function witnessScenario(step = 0.0025, playbackScale = 0.1) {
   const radius = 90, mass = 12250, gravity = 7200, softening = 16;
   const speed = Math.sqrt(gravity * mass * radius ** 2 / (radius ** 2 + softening ** 2) ** 1.5);
   return {
-    id: 'two-clock-proposal-witness',
+    id: 'two-clock-contract-witness',
     physics: { version: 'fixed-euler-swept-v1', gravity, softening, maxStep: step,
       timeScale: playbackScale, maxFrame: 0.05 },
     camera: { x: 0, y: 0, zoom: 1 }, tray: {},
@@ -93,7 +93,7 @@ export function runWitness({ step = 0.0025, playbackScale = 0.1 } = {}) {
       x: (previousBodies[i].x + body.x) / 2, y: (previousBodies[i].y + body.y) / 2 }));
     const shipPotential = potentialAt(midpoint, midpointBodies, scenario.physics);
     const earthPotential = potentialAt(scenario.earthClock, midpointBodies, scenario.physics);
-    const increment = clockIncrement(s.ship.vx, s.ship.vy, s.time - previousTime, CLOCK_PROPOSAL,
+    const increment = clockIncrement(s.ship.vx, s.ship.vy, s.time - previousTime, CLOCK_CONTRACT,
       { shipPotential, earthPotential, earthVx: scenario.earthClock.vx, earthVy: scenario.earthClock.vy });
     // Compensated sums; display rounding never feeds back into the clocks.
     const shipDelta = increment.ship - shipCorrection, nextShipYears = shipYears + shipDelta;
@@ -109,9 +109,9 @@ export function runWitness({ step = 0.0025, playbackScale = 0.1 } = {}) {
       returns++;
       if (earthYears >= 300) {
         const distanceToStart = Math.hypot(s.ship.x - 90, s.ship.y);
-        return { proposal: CLOCK_PROPOSAL, step, playbackScale, steps: s.steps,
+        return { contract: CLOCK_CONTRACT, step, playbackScale, steps: s.steps,
           initialSpeed: scenario.ship.vy, returns, earthYears, shipYears,
-          coordinateYears: s.time * CLOCK_PROPOSAL.yearsPerUnit,
+          coordinateYears: s.time * CLOCK_CONTRACT.yearsPerUnit,
           earthPotential: potentialAt(scenario.earthClock, s.bodies, scenario.physics),
           minShipPotential, maxShipPotential,
           position: { x: s.ship.x, y: s.ship.y }, distanceToStart, arrivalSpeed: speed,
@@ -128,14 +128,14 @@ export function runWitness({ step = 0.0025, playbackScale = 0.1 } = {}) {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   console.log(JSON.stringify({
-    status: 'proposal-not-adopted',
+    status: 'accepted-contract-experiment',
     constantSpeedExamples: [0, 0.6, 0.8, Math.sqrt(8 / 9), 0.95, 0.98].map(beta => ({
-      beta, ...clockIncrement(beta * CLOCK_PROPOSAL.lightSpeed, 0, 3) })),
+      beta, ...clockIncrement(beta * CLOCK_CONTRACT.lightSpeed, 0, 3) })),
     gravityExamples: [
       { name: 'same-field-rest', shipPotential: -400000, earthPotential: -400000, speed: 0 },
       { name: 'gravity-only', shipPotential: -1200000, earthPotential: 0, speed: 0 },
       { name: 'gravity-and-speed', shipPotential: -400000, earthPotential: -100000, speed: 600 },
-    ].map(fields => ({ ...fields, ...clockIncrement(fields.speed, 0, 3, CLOCK_PROPOSAL, fields) })),
+    ].map(fields => ({ ...fields, ...clockIncrement(fields.speed, 0, 3, CLOCK_CONTRACT, fields) })),
     orbit: runWitness(), halfStep: runWitness({ step: 0.00125 }),
     fasterPlayback: runWitness({ playbackScale: 2.5 }),
   }, null, 2));
