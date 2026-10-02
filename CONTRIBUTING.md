@@ -20,7 +20,9 @@
 
 ## Проверки
 
-Для воспроизведения аудита исходного скрипта нужен Node.js 20 или новее:
+Для новой основы нужен Node.js 20 или новее. Перед первым запуском выполните `npm ci`; запуск — `npm run dev`, сборка — `npm run build`, полный набор проверок — `npm run check`.
+
+Для отдельного воспроизведения аудита исходного скрипта:
 
 ```sh
 node tools/audit-spike.mjs
@@ -41,6 +43,5 @@ node tools/audit-spike.mjs
 Перед review изменений публикации выполняйте:
 
 ```sh
-node tools/build-pages.mjs --check
-node --test tools/build-pages.test.mjs
+npm run check
 ```
