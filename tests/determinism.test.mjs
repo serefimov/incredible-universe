@@ -3,7 +3,8 @@ import test from 'node:test';
 import { createGame, startGame, resetGame, placeBody, moveBody, removeBody } from '../src/state.js';
 import { advanceFrame, stepSimulation, collisionFraction, discardFrameTime } from '../src/physics.js';
 
-const physical = s => ({ ship: s.ship, bodies: s.bodies, time: s.time, steps: s.steps,
+const physical = s => ({ error: s.error, earthYears: s.earthYears, shipYears: s.shipYears, earthObserver: s.earthObserver,
+  earthCorrection: s.earthCorrection, shipCorrection: s.shipCorrection, ship: s.ship, bodies: s.bodies, time: s.time, steps: s.steps,
   trail: s.trail, status: s.status, collisionId: s.collisionId, collisionFraction: s.collisionFraction });
 const snapshot = game => structuredClone(physical(game.simulation));
 const schedules = [[1 / 30], [1 / 60], [1 / 120], [0.008, 0.017, 0.033, 0.012], [0.5, 0.001, 0.007]];
@@ -30,7 +31,10 @@ for (const placements of [[], [['planet', -350, -140]], [['star', -450, -100], [
         return run(game, schedule, ticks);
       });
       for (const result of results) assert.deepEqual(result, results[0]);
-      if (ticks === null) assert.equal(results[0].status, 'collision');
+      if (ticks === null) {
+        assert.equal(results[0].status, placements.length === 2 ? 'error' : 'collision');
+        if (placements.length === 2) assert.match(results[0].error, /меньше c/);
+      }
     });
   }
 }
@@ -79,11 +83,11 @@ test('неполный шаг сохраняется, длинный кадр о
 });
 
 const body = (id, x, y, vx = 0, fixed = true) => ({ id, x, y, vx, vy: 0, m: 0, r: 1, fixed });
-function crossing(bodies, ship = body('ship', -10, 0, 8000, false)) {
+function crossing(bodies, ship = body('ship', -10, 0, 800, false)) {
   const game = createGame();
   game.simulation.ship = ship;
   game.simulation.bodies = bodies;
-  const model = { ...game.scenario.physics, gravity: 0 };
+  const model = { ...game.scenario.physics, gravity: 0, maxStep: 0.025 };
   startGame(game);
   stepSimulation(game.simulation, model);
   return game.simulation;
@@ -94,12 +98,12 @@ test('быстрый корабль пересекает неподвижное 
   assert.equal(s.status, 'collision');
   assert.equal(s.collisionId, 'target');
   assert.ok(Math.abs(s.ship.x + 2) < 1e-12);
-  assert.ok(Math.abs(s.time - 0.001) < 1e-15);
+  assert.ok(Math.abs(s.time - 0.01) < 1e-15);
   assert.equal(s.trail.at(-1).x, s.ship.x);
 });
 
 test('учитывает движение тела, даже если корабль неподвижен', () => {
-  const s = crossing([body('moving', -10, 0, 8000, false)], body('ship', 0, 0, 0, false));
+  const s = crossing([body('moving', -10, 0, 800, false)], body('ship', 0, 0, 0, false));
   assert.equal(s.status, 'collision');
   assert.ok(Math.abs(s.bodies[0].x + 2) < 1e-12);
 });

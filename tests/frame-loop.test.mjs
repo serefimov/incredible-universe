@@ -26,9 +26,14 @@ test('реальный кадровый цикл пропускает фон, о
   const frame = milliseconds => { now += milliseconds; callback(now); };
   element('play').handlers.click(); frame(10);
   assert.equal(game.simulation.steps, 10);
+  assert.equal(element('earth-time').textContent, game.simulation.earthYears.toFixed(2));
+  assert.equal(element('ship-time').textContent, game.simulation.shipYears.toFixed(2));
+  assert.ok(game.simulation.earthYears > game.simulation.shipYears);
+  const hiddenClocks = [game.simulation.earthYears, game.simulation.shipYears];
   document.hidden = true; handlers.visibilitychange();
   frame(60000);
   assert.equal(game.simulation.steps, 10);
+  assert.deepEqual([game.simulation.earthYears, game.simulation.shipYears], hiddenClocks);
   document.hidden = false; handlers.visibilitychange(); frame(10);
   assert.equal(game.simulation.steps, 20, 'no background catch-up');
   game.simulation.ship.vx = NaN; frame(10);
@@ -37,6 +42,8 @@ test('реальный кадровый цикл пропускает фон, о
   assert.equal(element('play').disabled, true);
   element('reset').handlers.click();
   assert.equal(element('play').disabled, false);
+  assert.equal(element('earth-time').textContent, '0.00');
+  assert.equal(element('ship-time').textContent, '0.00');
   element('play').handlers.click(); frame(10);
   assert.equal(game.simulation.steps, 10);
 });

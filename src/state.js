@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { SPIKE_SCENARIO } from './scenario.js';
+import { CLOCK_CONTRACT } from './clocks.js';
 
 export function createSimulation(scenario, configuration) {
   return {
     status: 'ready', time: 0, steps: 0, accumulator: 0, trail: [],
     collisionId: null, collisionFraction: null, error: null,
+    clockVersion: CLOCK_CONTRACT.version, earthYears: 0, shipYears: 0,
+    earthCorrection: 0, shipCorrection: 0,
+    earthObserver: { ...(scenario.earthClock ?? { x: scenario.ship.x, y: scenario.ship.y, vx: 0, vy: 0 }) },
     ship: { ...scenario.ship },
     bodies: [
       ...scenario.bodies.map(body => ({ ...body })),
