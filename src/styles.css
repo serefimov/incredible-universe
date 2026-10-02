@@ -1,0 +1,15 @@
+html,body{margin:0;height:100%;overflow:hidden;background:#05070d;color:#eef;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+#wrap{height:100%;display:flex;flex-direction:column}
+#top{height:48px;display:flex;align-items:center;gap:8px;padding:0 10px;background:#0b1020;border-bottom:1px solid #24304a}
+#title{font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button{border:1px solid #405173;background:#17213a;color:#fff;border-radius:10px;padding:8px 11px;font-weight:700}
+button:disabled{opacity:.4}
+#status{font-variant-numeric:tabular-nums;font-size:11px;color:#aeb9d3;white-space:nowrap}
+#stage{position:relative;flex:1;min-height:0}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+#hint{position:absolute;left:10px;top:10px;max-width:min(460px,78vw);font-size:12px;line-height:1.35;color:#c7d1e8;background:#080c16d9;padding:7px 9px;border-radius:9px;pointer-events:none}
+#tray{height:102px;background:#0b1020;border-top:1px solid #24304a;display:flex;align-items:center;padding:0 10px;gap:8px;overflow-x:auto}
+.card{min-width:64px;height:68px;border:1px solid #405173;border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;user-select:none;touch-action:none;background:#121b30}
+.card .icon{font-size:28px;line-height:28px}.card small{font-size:9px;color:#b9c5df}.card.used{opacity:.35}
+#trayText{min-width:145px;font-size:10px;color:#9eabc7;line-height:1.25}.accent{color:#fff}
+#follow{font-size:11px}
