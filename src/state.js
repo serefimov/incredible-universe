@@ -3,7 +3,8 @@ import { SPIKE_SCENARIO } from './scenario.js';
 
 export function createSimulation(scenario, configuration) {
   return {
-    status: 'ready', time: 0, trail: [], collisionId: null,
+    status: 'ready', time: 0, steps: 0, accumulator: 0, trail: [],
+    collisionId: null, collisionFraction: null, error: null,
     ship: { ...scenario.ship },
     bodies: [
       ...scenario.bodies.map(body => ({ ...body })),
@@ -75,3 +76,4 @@ export function removeBody(game, type) {
   resetGame(game);
   return true;
 }
+

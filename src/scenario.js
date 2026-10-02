@@ -9,7 +9,7 @@ function freezeTree(value) {
 // Verified Spike #0.3 parameters. The level is data, not live simulation state.
 export const SPIKE_SCENARIO = freezeTree({
   id: 'spike-0.3',
-  physics: { gravity: 7200, softening: 16, maxStep: 0.0025, timeScale: 2.5, maxFrame: 0.05 },
+  physics: { version: 'fixed-euler-swept-v1', gravity: 7200, softening: 16, maxStep: 0.0025, timeScale: 2.5, maxFrame: 0.05 },
   camera: { x: -250, y: 40, zoom: 0.72 },
   bodies: [
     { id: 'sun', type: 'fixedStar', x: 0, y: 0, vx: 0, vy: 0, m: 3000, r: 30, fixed: true, label: 'Солнце' },
@@ -24,3 +24,4 @@ export const SPIKE_SCENARIO = freezeTree({
     star: { m: 4000, r: 27, drawR: 22, label: 'Звезда' },
   },
 });
+
