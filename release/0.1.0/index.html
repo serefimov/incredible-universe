@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Властелин Вселенной — Spike #0.3</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#05070d;color:#eef;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+#wrap{height:100%;display:flex;flex-direction:column}
+#top{height:48px;display:flex;align-items:center;gap:8px;padding:0 10px;background:#0b1020;border-bottom:1px solid #24304a}
+#title{font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button{border:1px solid #405173;background:#17213a;color:#fff;border-radius:10px;padding:8px 11px;font-weight:700}
+button:disabled{opacity:.4}
+#status{font-variant-numeric:tabular-nums;font-size:11px;color:#aeb9d3;white-space:nowrap}
+#stage{position:relative;flex:1;min-height:0}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+#hint{position:absolute;left:10px;top:10px;max-width:min(460px,78vw);font-size:12px;line-height:1.35;color:#c7d1e8;background:#080c16d9;padding:7px 9px;border-radius:9px;pointer-events:none}
+#tray{height:102px;background:#0b1020;border-top:1px solid #24304a;display:flex;align-items:center;padding:0 10px;gap:8px;overflow-x:auto}
+.card{min-width:64px;height:68px;border:1px solid #405173;border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;user-select:none;touch-action:none;background:#121b30}
+.card .icon{font-size:28px;line-height:28px}.card small{font-size:9px;color:#b9c5df}.card.used{opacity:.35}
+#trayText{min-width:145px;font-size:10px;color:#9eabc7;line-height:1.25}.accent{color:#fff}
+#follow{font-size:11px}
+</style>
+</head>
+<body>
+<div id="wrap">
+ <div id="top">
+  <div id="title">Властелин Вселенной · #0.3</div>
+  <div id="status">t = 0</div>
+  <button id="follow">🎯 Корабль</button>
+  <button id="play">▶</button>
+  <button id="reset" title="Вернуться к начальным условиям">↻</button>
+ </div>
+ <div id="stage">
+  <canvas id="c"></canvas>
+  <div id="hint"><b>До запуска:</b> тащи пустое место одним пальцем — двигай карту; колёсико/щипок — масштаб. Тела из ящика можно переставлять. <b>После ▶ камера следует за кораблём.</b></div>
+ </div>
+ <div id="tray">
+   <div class="card" data-type="planet"><div class="icon">🌍</div><small>ПЛАНЕТА</small></div>
+   <div class="card" data-type="giant"><div class="icon">🪐</div><small>ГИГАНТ</small></div>
+   <div class="card" data-type="star"><div class="icon">⭐</div><small>ЗВЕЗДА</small></div>
+   <div id="trayText"><span class="accent">v₀ = 0</span> у всех добавленных тел.<br>↻ сохраняет расстановку.<br>Тело можно вернуть в ящик.</div>
+ </div>
+</div>
+<script>
+(() => {
+const c=document.getElementById('c'),ctx=c.getContext('2d'),stage=document.getElementById('stage');
+const play=document.getElementById('play'),resetBtn=document.getElementById('reset'),followBtn=document.getElementById('follow');
+const status=document.getElementById('status'),hint=document.getElementById('hint'),tray=document.getElementById('tray');
+const cards=[...document.querySelectorAll('.card')];
+
+let W=0,H=0,dpr=1,running=false,last=0,simT=0,trail=[];
+let cam={x:0,y:0,zoom:1},follow=true;
+let bodies=[],ship=null;
+let setupPlaced=[]; // {type,x,y}
+let drag=null,pan=null,pinch=null;
+const G=7200;
+const TYPES={
+ planet:{m:420,r:14,drawR:13,label:'Планета'},
+ giant:{m:1450,r:20,drawR:18,label:'Гигант'},
+ star:{m:4000,r:27,drawR:22,label:'Звезда'}
+};
+
+function resize(){
+ dpr=Math.min(devicePixelRatio||1,2);
+ const r=stage.getBoundingClientRect();W=r.width;H=r.height;c.width=W*dpr;c.height=H*dpr;
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function worldToScreen(x,y){return{x:(x-cam.x)*cam.zoom+W/2,y:(y-cam.y)*cam.zoom+H/2};}
+function screenToWorld(x,y){return{x:(x-W/2)/cam.zoom+cam.x,y:(y-H/2)/cam.zoom+cam.y};}
+function baseBodies(){
+ return [
+  {id:'sun',type:'fixedStar',x:0,y:0,vx:0,vy:0,m:3000,r:30,fixed:true,label:'Солнце'},
+  {id:'p1',type:'fixedPlanet',x:360,y:-210,vx:0,vy:34,m:520,r:16,fixed:false,label:'Аурелия'},
+  {id:'p2',type:'fixedPlanet',x:-520,y:310,vx:19,vy:-10,m:700,r:18,fixed:false,label:'Борея'},
+  {id:'star2',type:'fixedStar',x:980,y:180,vx:0,vy:0,m:2200,r:25,fixed:true,label:'Дальняя звезда'}
+ ];
+}
+function baseShip(){return{id:'ship',x:-700,y:130,vx:58,vy:-5,m:.001,r:5,fixed:false};}
+
+function restoreSetup(recenter=false){
+ running=false;simT=0;trail=[];play.disabled=false;hint.style.display='block';
+ bodies=baseBodies();
+ for(const p of setupPlaced){
+   const t=TYPES[p.type];bodies.push({id:'user_'+p.type,type:p.type,x:p.x,y:p.y,vx:0,vy:0,m:t.m,r:t.r,fixed:false,user:true,label:t.label});
+ }
+ ship=baseShip();
+ if(recenter||!Number.isFinite(cam.x)){cam.x=-250;cam.y=40;cam.zoom=.72;}
+ follow=false;followBtn.textContent='🎯 Корабль';status.textContent='t = 0';
+ updateCards();
+}
+function updateCards(){
+ for(const card of cards){
+   card.classList.toggle('used',setupPlaced.some(p=>p.type===card.dataset.type));
+ }
+}
+function trayHit(cx,cy){const r=tray.getBoundingClientRect();return cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom;}
+function canvasPos(e){const r=c.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+function placedBodyAt(sx,sy){
+ let best=null,bd=32;
+ for(const b of bodies.filter(x=>x.user)){
+  const s=worldToScreen(b.x,b.y),d=Math.hypot(sx-s.x,sy-s.y);
+  if(d<bd){bd=d;best=b;}
+ }return best;
+}
+function validWorld(x,y,type,ignoreId=null){
+ const rr=TYPES[type].r;
+ if(Math.hypot(x-ship.x,y-ship.y)<90) return false;
+ for(const b of bodies){
+  if(b.id===ignoreId)continue;
+  if(Math.hypot(x-b.x,y-b.y)<rr+b.r+12)return false;
+ }
+ return true;
+}
+
+cards.forEach(card=>{
+ card.addEventListener('pointerdown',e=>{
+  if(running||setupPlaced.some(p=>p.type===card.dataset.type))return;
+  e.preventDefault();
+  const cp=canvasPos(e),w=screenToWorld(cp.x,cp.y);
+  drag={kind:'new',type:card.dataset.type,x:w.x,y:w.y,pointerId:e.pointerId};
+  card.setPointerCapture?.(e.pointerId);
+ });
+ card.addEventListener('pointermove',e=>{
+  if(!drag||drag.kind!=='new'||drag.pointerId!==e.pointerId)return;
+  const cp=canvasPos(e),w=screenToWorld(cp.x,cp.y);drag.x=w.x;drag.y=w.y;
+ });
+ card.addEventListener('pointerup',e=>{
+  if(!drag||drag.kind!=='new'||drag.pointerId!==e.pointerId)return;
+  const d=drag;drag=null;
+  if(!trayHit(e.clientX,e.clientY)&&validWorld(d.x,d.y,d.type)){
+    setupPlaced.push({type:d.type,x:d.x,y:d.y});restoreSetup(false);
+  }
+ });
+});
+
+const pointers=new Map();
+c.addEventListener('pointerdown',e=>{
+ if(running)return;
+ c.setPointerCapture?.(e.pointerId);
+ const p=canvasPos(e);pointers.set(e.pointerId,p);
+ const hit=placedBodyAt(p.x,p.y);
+ if(hit){
+   drag={kind:'existing',type:hit.type,id:hit.id,x:hit.x,y:hit.y,startX:hit.x,startY:hit.y,pointerId:e.pointerId};
+ }else{
+   pan={id:e.pointerId,last:p};
+ }
+});
+c.addEventListener('pointermove',e=>{
+ if(running)return;
+ const p=canvasPos(e);pointers.set(e.pointerId,p);
+ if(pointers.size>=2){
+   const vals=[...pointers.values()];
+   const dist=Math.hypot(vals[0].x-vals[1].x,vals[0].y-vals[1].y);
+   const mid={x:(vals[0].x+vals[1].x)/2,y:(vals[0].y+vals[1].y)/2};
+   if(!pinch)pinch={dist,zoom:cam.zoom,world:screenToWorld(mid.x,mid.y),mid};
+   else{
+     const nz=Math.max(.22,Math.min(2.8,pinch.zoom*dist/pinch.dist));
+     cam.zoom=nz;
+     cam.x=pinch.world.x-(mid.x-W/2)/cam.zoom;
+     cam.y=pinch.world.y-(mid.y-H/2)/cam.zoom;
+   }
+   return;
+ }
+ if(drag&&drag.kind==='existing'&&drag.pointerId===e.pointerId){
+   const w=screenToWorld(p.x,p.y);drag.x=w.x;drag.y=w.y;
+   const b=bodies.find(x=>x.id===drag.id);if(b){b.x=w.x;b.y=w.y;}
+ }else if(pan&&pan.id===e.pointerId){
+   cam.x-=(p.x-pan.last.x)/cam.zoom;cam.y-=(p.y-pan.last.y)/cam.zoom;pan.last=p;
+ }
+});
+function endPointer(e){
+ if(running)return;
+ if(drag&&drag.kind==='existing'&&drag.pointerId===e.pointerId){
+   const idx=setupPlaced.findIndex(p=>'user_'+p.type===drag.id);
+   if(trayHit(e.clientX,e.clientY)){
+     if(idx>=0)setupPlaced.splice(idx,1);
+   }else if(validWorld(drag.x,drag.y,drag.type,drag.id)){
+     if(idx>=0){setupPlaced[idx].x=drag.x;setupPlaced[idx].y=drag.y;}
+   }
+   drag=null;restoreSetup(false);
+ }
+ pointers.delete(e.pointerId);if(pan&&pan.id===e.pointerId)pan=null;if(pointers.size<2)pinch=null;
+}
+c.addEventListener('pointerup',endPointer);c.addEventListener('pointercancel',endPointer);
+c.addEventListener('wheel',e=>{
+ e.preventDefault();if(running)return;
+ const p=canvasPos(e),before=screenToWorld(p.x,p.y);
+ cam.zoom=Math.max(.22,Math.min(2.8,cam.zoom*Math.exp(-e.deltaY*.001)));
+ cam.x=before.x-(p.x-W/2)/cam.zoom;cam.y=before.y-(p.y-H/2)/cam.zoom;
+},{passive:false});
+
+play.onclick=()=>{running=true;follow=true;followBtn.textContent='🎯 Слежение';play.disabled=true;hint.style.display='none';last=performance.now();};
+resetBtn.onclick=()=>restoreSetup(false);
+followBtn.onclick=()=>{
+ follow=!follow;
+ followBtn.textContent=follow?'🎯 Слежение':'🎯 Корабль';
+ if(follow){cam.x=ship.x;cam.y=ship.y;}
+};
+
+function accel(o){
+ let ax=0,ay=0;
+ for(const b of bodies){
+  if(b===o)continue;
+  const dx=b.x-o.x,dy=b.y-o.y,d2=dx*dx+dy*dy,soft=16;
+  const den=Math.pow(d2+soft*soft,1.5);
+  ax+=G*b.m*dx/den;ay+=G*b.m*dy/den;
+ }
+ return{ax,ay};
+}
+function step(dt){
+ const movers=[...bodies.filter(b=>!b.fixed),ship];
+ for(const o of movers){const a=accel(o);o.vx+=a.ax*dt;o.vy+=a.ay*dt;}
+ for(const o of movers){o.x+=o.vx*dt;o.y+=o.vy*dt;}
+ simT+=dt;
+ if(!trail.length||simT-trail[trail.length-1].t>.12){trail.push({x:ship.x,y:ship.y,t:simT});if(trail.length>1200)trail.shift();}
+ for(const b of bodies){
+  if(Math.hypot(ship.x-b.x,ship.y-b.y)<b.r+ship.r){running=false;status.textContent='💥 столкновение';break;}
+ }
+}
+function circle(x,y,r,fill,stroke){
+ ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();
+ if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();}
+}
+function drawBody(b){
+ const s=worldToScreen(b.x,b.y);if(s.x<-80||s.x>W+80||s.y<-80||s.y>H+80)return;
+ const rr=Math.max(5,b.r*Math.sqrt(cam.zoom));
+ if(b.type==='fixedStar'||b.type==='star'){
+  circle(s.x,s.y,rr+7,'#ffb52a22');circle(s.x,s.y,rr,b.type==='star'?'#fff1a8':'#ffd45a');
+ }else if(b.type==='giant')circle(s.x,s.y,rr,'#c19a72','#f0d0aa');
+ else if(b.type==='planet')circle(s.x,s.y,rr,'#7c8fd1','#c7d1ff');
+ else circle(s.x,s.y,rr,'#69a6a1','#aee1dc');
+ ctx.fillStyle='#aeb9d3';ctx.font='10px system-ui';ctx.fillText(b.label,s.x+rr+5,s.y-rr-2);
+ if(!running&&b.user){ctx.fillStyle='#7f8da9';ctx.fillText('v = 0',s.x+rr+5,s.y+10);}
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ for(let i=0;i<110;i++){
+  const x=(i*137.3)%W,y=(i*73.7)%H;ctx.globalAlpha=.22+(i%5)*.1;circle(x,y,(i%3)*.35+.3,'#aeb9d3');
+ }ctx.globalAlpha=1;
+ if(trail.length>1){
+  ctx.beginPath();let s=worldToScreen(trail[0].x,trail[0].y);ctx.moveTo(s.x,s.y);
+  for(const p of trail){s=worldToScreen(p.x,p.y);ctx.lineTo(s.x,s.y);}
+  ctx.strokeStyle='#6d7899aa';ctx.lineWidth=1.3;ctx.stroke();
+ }
+ for(const b of bodies)drawBody(b);
+ if(drag&&drag.kind==='new'){
+   const s=worldToScreen(drag.x,drag.y),ok=validWorld(drag.x,drag.y,drag.type),rr=TYPES[drag.type].drawR;
+   circle(s.x,s.y,rr,ok?'#7c8fd199':'#a64c5d99',ok?'#d7deff':'#ff899b');
+ }
+ const ss=worldToScreen(ship.x,ship.y),ang=Math.atan2(ship.vy,ship.vx);
+ ctx.save();ctx.translate(ss.x,ss.y);ctx.rotate(ang);ctx.fillStyle='#eef4ff';
+ ctx.beginPath();ctx.moveTo(12,0);ctx.lineTo(-7,-5);ctx.lineTo(-4,0);ctx.lineTo(-7,5);ctx.closePath();ctx.fill();ctx.restore();
+ if(!running&&!trail.length){
+  const sp=Math.hypot(ship.vx,ship.vy),ux=ship.vx/sp,uy=ship.vy/sp;
+  ctx.setLineDash([5,6]);ctx.strokeStyle='#d8e1ff';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(ss.x+ux*15,ss.y+uy*15);ctx.lineTo(ss.x+ux*65,ss.y+uy*65);ctx.stroke();ctx.setLineDash([]);
+ }
+}
+function frame(now){
+ if(running){
+  let real=Math.min((now-last)/1000,.05);last=now,total=real*2.5,h=.0025;
+  while(total>0){const d=Math.min(h,total);step(d);total-=d;if(!running)break;}
+  if(follow){cam.x+=(ship.x-cam.x)*.16;cam.y+=(ship.y-cam.y)*.16;}
+  if(running)status.textContent='t = '+simT.toFixed(1)+'  v='+Math.hypot(ship.vx,ship.vy).toFixed(0);
+ }
+ draw();requestAnimationFrame(frame);
+}
+resize();cam={x:-250,y:40,zoom:.72};restoreSetup(false);requestAnimationFrame(frame);
+})();
+</script>
+</body></html>
