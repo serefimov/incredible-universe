@@ -53,11 +53,13 @@ export function createRenderer(canvas, stage) {
         ctx.fillStyle = '#7f8da9'; ctx.fillText('v = 0', s.x + r + 5, s.y + 10);
       }
     }
-    if (input.drag?.kind === 'new') {
+    if (input.drag) {
       const drag = input.drag, s = screen(drag.x, drag.y);
-      const ok = validPlacement(game, drag.type, drag.x, drag.y);
-      circle(s.x, s.y, scenario.tray[drag.type].drawR,
+      const ok = validPlacement(game, drag.type, drag.x, drag.y, drag.id ?? null);
+      circle(s.x, s.y, scenario.tray[drag.type].drawR + 5,
         ok ? '#7c8fd199' : '#a64c5d99', ok ? '#d7deff' : '#ff899b');
+      ctx.fillStyle = ok ? '#d7deff' : '#ff899b'; ctx.font = '12px system-ui';
+      ctx.fillText(ok ? '✓' : '×', s.x + scenario.tray[drag.type].drawR + 9, s.y - 10);
     }
     const ship = simulation.ship, ss = screen(ship.x, ship.y);
     ctx.save(); ctx.translate(ss.x, ss.y); ctx.rotate(Math.atan2(ship.vy, ship.vx));

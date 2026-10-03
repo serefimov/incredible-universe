@@ -51,7 +51,7 @@ test('реальный кадровый цикл пропускает фон, о
 test('уход в фон, Reset и Play отменяют реальные жесты до подтверждения позиции', async () => {
   const { createInput } = await import('../src/input.js');
   const { worldToScreen } = await import('../src/camera.js');
-  let game, input, callback, now = 0;
+  let game, input, callback, resizeCallback, now = 0;
   const nodes = new Map(), handlers = {};
   const element = id => {
     if (!nodes.has(id)) {
@@ -71,12 +71,18 @@ test('уход в фон, Reset и Play отменяют реальные жес
   vm.runInNewContext(source, { document, performance: { now: () => now },
     createGame: () => (game = createGame()), resetGame, startGame, advanceFrame, discardFrameTime, followShip,
     createInput: (...args) => (input = createInput(...args)),
-    createRenderer: () => ({ viewport, resize() {}, draw() {} }), ResizeObserver: class { observe() {} },
+    createRenderer: () => ({ viewport, resize() {}, draw() {} }),
+    ResizeObserver: class { constructor(fn) { resizeCallback = fn; } observe() {} },
     requestAnimationFrame: fn => { callback = fn; } });
   const send = (node, name, values = {}) => node.handlers[name]?.({ pointerType: 'touch', pointerId: 1, preventDefault() {}, ...values });
   const at = (x, y) => { const s = worldToScreen(game.camera, viewport, x, y); return { clientX: s.x, clientY: s.y + 48 }; };
   const newDrag = () => { send(cards[0], 'pointerdown', { clientX: 40, clientY: 790 }); send(cards[0], 'pointermove', at(-350, -140)); };
   newDrag(); assert.ok(input.state.drag);
+  resizeCallback();
+  assert.equal(input.state.drag, null); assert.equal(cards[0].hasPointerCapture(1), false);
+  send(cards[0], 'pointerup', at(-350, -140));
+  assert.equal(game.configuration.placed.length, 0);
+  newDrag();
   document.hidden = true; handlers.visibilitychange();
   assert.equal(input.state.drag, null); assert.equal(cards[0].hasPointerCapture(1), false);
   document.hidden = false; handlers.visibilitychange(); send(cards[0], 'pointerup', at(-350, -140));

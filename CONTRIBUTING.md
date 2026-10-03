@@ -45,3 +45,16 @@ node tools/audit-spike.mjs
 ```sh
 npm run check
 ```
+
+
+
+## Браузерная проверка касаний
+
+CI выполняет `tools/check-touch-browser.py` отдельной задачей `touch-browser`.
+Локально нужны Chrome/Chromium, Python с Playwright 1.55.0 и результат
+`npm run build`. Запуск: `python3 tools/check-touch-browser.py`.
+Скрипт поднимает локальный сервер и добавляет в отдаваемый main.js только
+наблюдатель состояния для тестов; исходные файлы игры не меняются.
+События Touch передаются браузеру через CDP, снимки сохраняются в
+`artifacts/touch-browser/` и прикладываются к CI. Это эмуляция браузера,
+а критерий физического смартфона требует отдельного отчёта устройства.
