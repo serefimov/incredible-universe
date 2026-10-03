@@ -88,19 +88,24 @@ with sync_playwright() as p:
         assert stage['height'] >= 100 and stage['bottom'] <= tray['y'], boxes
         assert page.evaluate('getComputedStyle(document.querySelector("canvas")).touchAction') == 'none'
         assert page.evaluate('document.documentElement.scrollWidth') <= width
-        assert page.locator('#tray').is_hidden()
+        assert page.locator('#tray').is_visible()
         assert page.locator('#mission-panel').is_hidden()
+        info_box = page.locator('#info').bounding_box()
+        assert info_box['y'] < height / 2
+        assert info_box['x'] + info_box['width'] >= width - 15
         for selector in ['#play', '#reset', '#follow']:
             box = page.locator(selector).bounding_box()
             assert box['width'] >= 60 and box['height'] >= 60
             assert box['y'] > height / 2
         page.screenshot(path=str(OUTPUT / f'{width}x{height}.png'))
-        page.locator('#tray-toggle').tap()
         for card in page.locator('.card').all():
             box = card.bounding_box()
             assert box['width'] >= 44 and box['height'] >= 44
             assert box['y'] >= 0 and box['y'] + box['height'] <= height
         page.screenshot(path=str(OUTPUT / f'drawer-{width}x{height}.png'))
+        page.locator('#tray-toggle').tap()
+        assert page.locator('#tray').is_hidden()
+        assert page.locator('#tray-toggle').is_visible()
         print(f'PASS layout {width}x{height}', flush=True)
         context.close()
 
@@ -178,6 +183,21 @@ with sync_playwright() as p:
     touch('touchEnd', 1)
     assert state()['configuration'] == before
     assert page.evaluate('visualViewport.scale') == 1, 'pinch must zoom the game, not the page'
+    # The tray's own handle folds down and pulls up, independently of physics.
+    before_handle = state()['configuration']
+    hx, hy = centre('#tray-toggle')
+    drag([hx,hy], [hx,hy+75])
+    assert page.locator('#tray').is_hidden()
+    hx, hy = centre('#tray-toggle')
+    drag([hx,hy], [hx,hy-75])
+    assert page.locator('#tray').is_visible()
+    hx, hy = centre('#tray-toggle')
+    touch('touchStart',1,[hx,hy])
+    touch('touchMove',1,[hx,hy+75])
+    cdp.send('Input.dispatchTouchEvent', {'type':'touchCancel','touchPoints':[]})
+    fingers.clear()
+    assert page.locator('#tray').is_visible()
+    assert state()['configuration'] == before_handle
     # Other dock buttons must not delete, move or reset the body on drop.
     before_dock_drop = state()['configuration']
     drag(at(-310, -120), centre('#reset'))

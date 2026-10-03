@@ -88,6 +88,7 @@ document.addEventListener('keydown', event => {
 });
 document.addEventListener('visibilitychange', () => {
   input.cancel();
+  ui.cancelGesture?.();
   last = performance.now();
   discardFrameTime(game.simulation);
 });
@@ -103,6 +104,6 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 renderer.resize();
-new ResizeObserver(() => { input.cancel(); renderer.resize(); }).observe(stage);
+new ResizeObserver(() => { input.cancel(); ui.cancelGesture?.(); renderer.resize(); }).observe(stage);
 updateUI();
 requestAnimationFrame(frame);

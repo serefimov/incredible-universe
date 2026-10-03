@@ -8,7 +8,7 @@ function harness(reduced = false) {
   const element = id => {
     if (!nodes.has(id)) {
       const classes = new Set();
-      nodes.set(id, { hidden: true, attrs: {}, handlers: {},
+      nodes.set(id, { hidden: true, style: {}, attrs: {}, handlers: {}, getBoundingClientRect:()=>({height:140}),
         setAttribute(key,value) { this.attrs[key] = value; },
         addEventListener(key,fn) { this.handlers[key] = fn; },
         classList: { add: key => classes.add(key), remove: key => classes.delete(key),
@@ -26,14 +26,30 @@ function harness(reduced = false) {
 
 test('i и ящик открываются без записи в физику; закрытый ящик оставляет возврат доступным', () => {
   const h=harness(),before=structuredClone(h.game);
+  assert.equal(h.element('tray').hidden,false,'drawer starts open');
   h.click('info');assert.equal(h.element('mission-panel').hidden,false);
   h.click('tray-toggle');assert.equal(h.element('mission-panel').hidden,true);
   assert.equal(h.element('tray').hidden,false);
   h.click('tray-toggle');assert.equal(h.element('tray').hidden,true);
   h.input.state.drag={kind:'existing'};h.ui.paint();
-  assert.equal(h.element('tray-label').textContent,'Вернуть');
+  assert.equal(h.element('tray-label').textContent,'Вернуть тело');
   assert.ok(h.element('tray-toggle').classList.contains('drop-ready'));
   assert.deepEqual(h.game,before);assert.equal(h.cancellations(),3);
+});
+
+test('ручка вытягивает ящик вверх, сворачивает вниз и откатывает отменённый жест', () => {
+  const h=harness(),handle=h.element('tray-toggle');
+  const send=(name,y)=>handle.handlers[name]({pointerId:1,clientY:y,preventDefault(){}});
+  const before=structuredClone(h.game);
+  send('pointerdown',500);send('pointermove',580);send('pointerup',580);
+  assert.equal(h.element('tray').hidden,true);
+  handle.handlers.click({detail:1});assert.equal(h.element('tray').hidden,true,'synthetic click cannot undo swipe');
+  send('pointerdown',580);send('pointermove',500);send('pointerup',500);
+  assert.equal(h.element('tray').hidden,false);
+  send('pointerdown',500);send('pointermove',580);send('pointercancel',580);
+  assert.equal(h.element('tray').hidden,false);assert.equal(h.element('tray-sheet').style.transform,'');
+  h.ui.closeTray();h.ui.reset();assert.equal(h.element('tray').hidden,false,'Reset restores open drawer');
+  assert.deepEqual(h.game,before);
 });
 
 for(const outcome of ['win','lose']) test(`полноэкранный ${outcome}: один показ, исчезновение и повтор после Reset`, () => {

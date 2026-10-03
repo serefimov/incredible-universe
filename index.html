@@ -11,6 +11,7 @@
  <div id="top">
   <div id="title">The Incredible Universe</div>
   <div id="status">готово</div>
+  <button id="info" aria-label="Задание, условия и результат" aria-controls="mission-panel" aria-expanded="false"><span class="symbol">i</span></button>
  </div>
  <div id="clocks" role="group" aria-label="Время с начала полёта">
   <span id="ship-clock">Корабль: <output id="ship-time">0.00</output> лет</span>
@@ -30,18 +31,19 @@
  <div id="stage">
   <canvas id="c" aria-label="Карта Вселенной"></canvas>
  </div>
- <div id="tray" hidden aria-label="Ящик небесных тел">
+ <section id="tray-sheet" aria-label="Ящик небесных тел">
+  <button id="tray-toggle" aria-label="Свернуть или вытянуть ящик; сюда можно вернуть тело" aria-controls="tray" aria-expanded="true"><span class="handle-line"></span><span id="tray-label">Ящик тел</span></button>
+  <div id="tray">
    <div class="card" data-type="planet"><div class="icon">🌍</div><small>ПЛАНЕТА</small></div>
    <div class="card" data-type="giant"><div class="icon">🪐</div><small>ГИГАНТ</small></div>
    <div class="card" data-type="star"><div class="icon">⭐</div><small>ЗВЕЗДА</small></div>
    <div id="trayText"><span class="accent">v₀ = 0</span> у всех добавленных тел.<br> ↻ сохраняет расстановку.<br> Тело можно вернуть в ящик.</div>
  </div>
+ </section>
  <nav id="controls" aria-label="Управление опытом">
   <button id="play" aria-label="Запустить симуляцию"><span class="symbol">▶</span><small>Пуск</small></button>
   <button id="reset" aria-label="Вернуться к начальным условиям"><span class="symbol">↻</span><small>Сброс</small></button>
   <button id="follow" aria-label="Центрировать камеру и переключить слежение"><span class="symbol">◎</span><small id="follow-label">Корабль</small></button>
-  <button id="tray-toggle" aria-label="Открыть ящик; перенесите сюда тело для удаления" aria-controls="tray" aria-expanded="false"><span class="symbol">▣</span><small id="tray-label">Тела</small></button>
-  <button id="info" aria-label="Задание, условия и результат" aria-controls="mission-panel" aria-expanded="false"><span class="symbol">i</span><small>Инфо</small></button>
  </nav>
 </div>
 <button id="outcome-overlay" hidden aria-label="Закрыть сообщение о результате">
