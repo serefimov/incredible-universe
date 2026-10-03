@@ -40,6 +40,8 @@ function updateUI() {
   follow.classList.toggle('tracking', simulation.status === 'running' && game.camera.follow);
   hint.hidden = simulation.status !== 'ready';
   const display = missionDisplay(game);
+  element('mission-brief').textContent = display.brief;
+  element('mission-brief').hidden = !ready || !display.brief;
   element('mission-heading').textContent = display.heading;
   missionText.textContent = display.goal;
   element('conditions').textContent = display.conditions;

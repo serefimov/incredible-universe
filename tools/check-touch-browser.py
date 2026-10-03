@@ -432,11 +432,16 @@ with sync_playwright() as p:
         assert page.locator('#title').inner_text() == 'Первое вмешательство'
         assert page.locator('.card:visible').count() == 1
         assert page.locator('#earth-clock').is_hidden()
+        assert page.locator('#mission-brief').is_visible()
+        assert page.locator('#mission-brief').inner_text() == 'Выжить 500 лет по часам корабля без столкновения.'
+        brief = page.locator('#mission-brief').bounding_box()
+        assert brief['y'] + brief['height'] <= page.locator('#tray-sheet').bounding_box()['y']
         page.locator('#info').tap()
         assert '500' in page.locator('#conditions').inner_text()
         page.locator('#info-close').tap()
         page.screenshot(path=str(OUTPUT / f'first-level-start-{width}x{height}.png'))
         page.locator('#play').tap()
+        assert page.locator('#mission-brief').is_hidden()
         page.wait_for_function('inspectGame().simulation.status === "lose"')
         assert state()['simulation']['collisionId'] == 'helios'
         page.locator('#outcome-overlay').tap()
@@ -445,6 +450,7 @@ with sync_playwright() as p:
         page.locator('#play').tap()
         page.locator('#info-close').tap()
         assert page.locator('#tray').is_visible()
+        assert page.locator('#mission-brief').is_visible()
         drag(centre('[data-type=planet]'),at(-110,-120))
         assert len(state()['configuration']['placed']) == 1
         placement = state()['configuration']
@@ -477,6 +483,7 @@ with sync_playwright() as p:
     assert page.locator('.card:visible').count() == 1
     assert page.locator('#earth-clock').is_hidden()
     print('PASS authored campaign embedded into standalone HTML', flush=True)
+    assert page.locator('#mission-brief').is_visible()
     assert not errors, errors
     browser.close()
 server.shutdown()

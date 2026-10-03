@@ -7,6 +7,20 @@ const number = value => Number.isFinite(value) ? `≈${value.toFixed(2)}` : 'н�
 const range = limit => [limit.min === undefined ? '' : `≥ ${limit.min}`,
   limit.max === undefined ? '' : `≤ ${limit.max}`].filter(Boolean).join(' и ');
 const clockNames = { ship: 'Часы корабля', earth: 'Часы Земли', coordinate: 'Время модели' };
+const briefClocks = { ship: 'по часам корабля', earth: 'по часам Земли', coordinate: 'времени модели' };
+
+function missionBrief(mission) {
+  if (!mission) return '';
+  if (mission.type === 'survival') {
+    return `Выжить ${mission.survive.years} лет ${briefClocks[mission.survive.clock]} без столкновения.`;
+  }
+  const parts = [`Войти в область цели (радиус ${mission.target.radius} мир. ед.) без столкновения`];
+  if (mission.limits.relativeSpeed) parts.push(`скорость относительно цели ${range(mission.limits.relativeSpeed)} мир. ед./ед. времени`);
+  for (const [key, clock] of [['shipYears', 'ship'], ['earthYears', 'earth']]) {
+    if (mission.limits[key]) parts.push(`${range(mission.limits[key])} лет ${briefClocks[clock]}`);
+  }
+  return `${parts.join(' · ')}.`;
+}
 
 // Read only the committed physical state. Rounding is presentation, never a decision.
 export function missionDisplay(game) {
@@ -67,7 +81,7 @@ export function missionDisplay(game) {
       : '💥 Столкновение. Полёт остановлен.';
     result += `\n${values.join('\n')}\nНажмите ↻ для новой попытки.`;
   }
-  return { goal: game.level ? `${game.level.title}\n${game.level.description}` : '',
+  return { brief: missionBrief(mission), goal: game.level ? `${game.level.title}\n${game.level.description}` : '',
     conditions: rows.join('\n'), feedback, result, terminal: Boolean(result),
     heading: s.status === 'win' ? '✓ Победа — условия и результат' :
       s.status === 'lose' ? '× Поражение — условия и результат' :
