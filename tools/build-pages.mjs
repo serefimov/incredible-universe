@@ -6,16 +6,18 @@ import { fileURLToPath } from 'node:url';
 import { bundleHTML, validSourcePath } from './build-game.mjs';
 
 const versionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const prereleasePattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-(alpha|beta|pre|rc)(?:\.(0|[1-9]\d*))?$/;
 const tagPattern = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const git = (repo, ...args) => execFileSync('git', args, { cwd: repo });
 
 function metadata(read, expectedVersion) {
   const version = read('VERSION').toString().trim();
-  if (!versionPattern.test(version) || (expectedVersion && version !== expectedVersion)) {
+  if (!(versionPattern.test(version) || (!expectedVersion && prereleasePattern.test(version))) || (expectedVersion && version !== expectedVersion)) {
     throw new Error(`VERSION ${version} не соответствует версии ${expectedVersion ?? 'X.Y.Z'}`);
   }
   const changelog = read('CHANGELOG.md').toString();
-  if (!changelog.split(/\r?\n/).some(line => line === `## ${version}`)) {
+  if (!changelog.split(/\r?\n/).some(line => line === `## ${version}` ||
+      (!expectedVersion && prereleasePattern.test(version) && line === '## Не выпущено'))) {
     throw new Error(`В CHANGELOG.md нет раздела ## ${version}`);
   }
   const { entrypoint, bundle } = JSON.parse(read('release.json'));
@@ -115,3 +117,4 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.exitCode = 1;
   }
 }
+
