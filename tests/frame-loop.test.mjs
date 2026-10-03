@@ -12,7 +12,7 @@ test('реальный кадровый цикл пропускает фон, о
   let game, now = 0, callback;
   const nodes = new Map();
   const element = id => {
-    if (!nodes.has(id)) nodes.set(id, { handlers: {}, addEventListener(name, fn) { this.handlers[name] = fn; } });
+    if (!nodes.has(id)) nodes.set(id, { handlers: {}, classList: { toggle() {} }, setAttribute() {}, addEventListener(name, fn) { this.handlers[name] = fn; } });
     return nodes.get(id);
   };
   const handlers = {};
@@ -26,7 +26,13 @@ test('реальный кадровый цикл пропускает фон, о
     createRenderer: () => ({ resize() {}, draw() {}, viewport: {} }),
     ResizeObserver: class { observe() {} }, requestAnimationFrame: fn => { callback = fn; } });
   const frame = milliseconds => { now += milliseconds; callback(now); };
+  element('follow').handlers.click();
+  element('follow').handlers.click();
+  assert.equal(game.camera.follow, false, 'centering before launch never starts following');
+  assert.equal(game.camera.x, game.simulation.ship.x);
   element('play').handlers.click(); frame(10);
+  element('follow').handlers.click(); element('follow').handlers.click();
+  assert.equal(game.camera.follow, true, 'centering during flight never disables following');
   assert.equal(game.simulation.steps, 10);
   assert.equal(element('earth-time').textContent, game.simulation.earthYears.toFixed(2));
   assert.equal(element('ship-time').textContent, game.simulation.shipYears.toFixed(2));
@@ -41,8 +47,9 @@ test('реальный кадровый цикл пропускает фон, о
   game.simulation.ship.vx = NaN; frame(10);
   assert.equal(game.simulation.status, 'error');
   assert.match(element('status').textContent, /ошибка симуляции/);
-  assert.equal(element('play').disabled, true);
-  element('reset').handlers.click();
+  assert.equal(element('play').disabled, false);
+  assert.equal(element('play-label').textContent, 'Сброс');
+  element('play').handlers.click();
   assert.equal(element('play').disabled, false);
   assert.equal(element('earth-time').textContent, '0.00');
   assert.equal(element('ship-time').textContent, '0.00');
@@ -95,13 +102,20 @@ test('уход в фон, Reset и Play отменяют реальные жес
   document.hidden = true; handlers.visibilitychange(); document.hidden = false; handlers.visibilitychange();
   send(element('c'), 'pointerup', at(-310, -120));
   assert.deepEqual(game.configuration, before);
-  for (const button of ['reset', 'play']) {
+  for (const button of ['follow', 'play']) {
     send(element('c'), 'pointerdown', at(-350, -140)); send(element('c'), 'pointermove', at(-310, -120));
     element(button).handlers.click();
     assert.equal(input.state.drag, null); assert.equal(input.state.pointers.size, 0);
     assert.equal(element('c').hasPointerCapture(1), false);
     send(element('c'), 'pointerup', at(-310, -120)); assert.deepEqual(game.configuration, before);
   }
+  assert.equal(element('play-label').textContent, 'Сброс');
+  element('play').handlers.click();
+  assert.equal(game.simulation.status, 'ready');
+  assert.equal(game.simulation.shipYears, 0);
+  assert.deepEqual(game.configuration, before);
+  assert.equal(element('play-label').textContent, 'Пуск');
+  element('play').handlers.click();
   now = 10; callback(now);
   assert.equal(game.simulation.status, 'running');
   assert.equal(game.configuration.placed[0].x, -350);

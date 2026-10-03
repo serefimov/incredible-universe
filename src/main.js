@@ -11,7 +11,7 @@ import { createInterface } from './interface.js';
 
 const element = id => document.getElementById(id);
 const canvas = element('c'), stage = element('stage');
-const play = element('play'), reset = element('reset'), follow = element('follow');
+const play = element('play'), follow = element('follow');
 const status = element('status'), hint = element('hint');
 const earthTime = element('earth-time'), shipTime = element('ship-time');
 const cards = [...document.querySelectorAll('.card')];
@@ -29,9 +29,13 @@ if (observerBody) earthLabel.title = `Часы на теле «${observerBody.la
 const renderer = createRenderer(canvas, stage);
 function updateUI() {
   const simulation = game.simulation;
-  play.disabled = simulation.status !== 'ready';
+  const ready = simulation.status === 'ready';
+  play.disabled = false;
+  element('play-symbol').textContent = ready ? '▶' : '↻';
+  element('play-label').textContent = ready ? 'Пуск' : 'Сброс';
+  play.setAttribute('aria-label', ready ? 'Запустить симуляцию' : 'Сбросить опыт, сохранив расстановку');
+  play.classList.toggle('resetting', !ready);
   hint.hidden = simulation.status !== 'ready';
-  element('follow-label').textContent = game.camera.follow ? 'Слежение' : 'Корабль';
   const display = missionDisplay(game);
   element('mission-heading').textContent = display.heading;
   missionText.textContent = display.goal;
@@ -44,8 +48,8 @@ function updateUI() {
   missionText.hidden = false;
   status.textContent = simulation.status === 'win' ? '✓ Победа' :
     simulation.status === 'lose' ? '× Поражение' :
-    simulation.status === 'error' ? '⚠ ошибка симуляции — нажмите Reset' :
-    simulation.status === 'collision' ? '💥 столкновение — нажмите Reset' :
+    simulation.status === 'error' ? '⚠ ошибка симуляции — нажмите Сброс' :
+    simulation.status === 'collision' ? '💥 столкновение — нажмите Сброс' :
     simulation.status === 'ready' ? 'Расстановка' : 'Полёт';
   earthTime.textContent = simulation.earthYears.toFixed(2);
   shipTime.textContent = simulation.shipYears.toFixed(2);
@@ -67,20 +71,19 @@ ui = createInterface(game, element, input);
 let last = 0;
 play.addEventListener('click', () => {
   input.cancel();
-  ui.closeTray(); ui.closeInfo(); ui.dismiss();
-  if (startGame(game)) last = performance.now();
+  if (game.simulation.status === 'ready') {
+    ui.closeTray(); ui.closeInfo(); ui.dismiss();
+    if (startGame(game)) last = performance.now();
+  } else {
+    resetGame(game);
+    ui.reset();
+  }
   updateUI();
 });
-reset.addEventListener('click', () => {
-  input.cancel(); resetGame(game); updateUI();
-  ui.reset();
-});
 follow.addEventListener('click', () => {
-  game.camera.follow = !game.camera.follow;
-  if (game.camera.follow) {
-    game.camera.x = game.simulation.ship.x;
-    game.camera.y = game.simulation.ship.y;
-  }
+  input.cancel();
+  game.camera.x = game.simulation.ship.x;
+  game.camera.y = game.simulation.ship.y;
   updateUI();
 });
 document.addEventListener('keydown', event => {
