@@ -36,6 +36,7 @@ button:focus-visible,#mission-body:focus-visible{outline:2px solid #81e1de;outli
 #mission-heading{font-size:15px;margin:0}
 #mission-body{position:relative;overflow-y:auto;overscroll-behavior:contain;padding:0 14px 14px;scrollbar-gutter:stable}
 #mission,#conditions,#result{white-space:pre-line;overflow-wrap:anywhere}
+#training-link{display:block;color:#81e1de;margin:8px 0 12px;padding:10px 0;min-height:24px}
 #mission{font-weight:600;margin-bottom:10px}#conditions{font-variant-numeric:tabular-nums;color:#d0e5f4}
 #mission-feedback{margin:10px 0;color:#d9c98e}
 #result{padding:10px;border:1px solid #526685;border-radius:10px;background:#14203a;font-variant-numeric:tabular-nums}

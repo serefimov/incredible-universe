@@ -1,0 +1,115 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "training-1",
+    "title": "Первое вмешательство",
+    "description": "Измените траекторию корабля одной планетой и продержитесь 500 лет по часам корабля без столкновения. Планету можно разместить в отмеченных областях над или под курсом корабля.",
+    "purpose": "campaign",
+    "universe": {
+      "id": "first-intervention",
+      "physics": {
+        "version": "fixed-euler-swept-v1",
+        "gravity": 7200,
+        "softening": 16,
+        "maxStep": 0.0025,
+        "timeScale": 0.5,
+        "maxFrame": 0.05
+      },
+      "camera": {
+        "x": -40,
+        "y": 40,
+        "zoom": 0.65
+      },
+      "bodies": [
+        {
+          "id": "helios",
+          "type": "fixedStar",
+          "x": 70,
+          "y": 0,
+          "vx": 0,
+          "vy": 0,
+          "m": 60,
+          "r": 28,
+          "fixed": true,
+          "label": "Гелиос"
+        }
+      ],
+      "ship": {
+        "id": "ship",
+        "x": -150,
+        "y": 0,
+        "vx": 35,
+        "vy": 0,
+        "m": 0.001,
+        "r": 4,
+        "fixed": false
+      },
+      "tray": {
+        "planet": {
+          "m": 40,
+          "r": 12,
+          "drawR": 13,
+          "label": "Планета",
+          "count": 1
+        }
+      },
+      "earthClock": {
+        "kind": "inertial",
+        "x": -150,
+        "y": 0,
+        "vx": 0,
+        "vy": 0
+      }
+    },
+    "placement": {
+      "regions": [
+        {
+          "kind": "rect",
+          "xMin": -150,
+          "xMax": -20,
+          "yMin": -150,
+          "yMax": -50
+        },
+        {
+          "kind": "rect",
+          "xMin": -150,
+          "xMax": -20,
+          "yMin": 50,
+          "yMax": 150
+        }
+      ],
+      "shipClearance": 45,
+      "bodyGap": 12
+    },
+    "mission": {
+      "type": "survival",
+      "maxCoordinateYears": 700,
+      "survive": {
+        "clock": "ship",
+        "years": 500
+      }
+    },
+    "tutorial": {
+      "showFutureTrajectory": false,
+      "showMotionVector": true,
+      "steps": [
+        {
+          "id": "observe-collision",
+          "text": "Ничего не меняйте и нажмите Пуск. Проследите, куда летит корабль.",
+          "until": "collision",
+          "availableCounts": {
+            "planet": 0
+          }
+        },
+        {
+          "id": "intervene",
+          "text": "Нажмите Сброс и разместите одну планету, чтобы отклонить корабль от звезды.",
+          "until": "success",
+          "availableCounts": {
+            "planet": 1
+          }
+        }
+      ]
+    }
+  }
+]

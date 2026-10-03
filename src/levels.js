@@ -187,7 +187,7 @@ export function describeMission(level) {
 }
 
 // Author's design plan is deliberately separate from runnable, balanced levels.
-export function loadTrainingPlan(input, examples) {
+export function loadTrainingPlan(input, examples, campaign = []) {
   const plan = typeof input === 'string' ? JSON.parse(input) : structuredClone(input);
   keys(plan, ['schemaVersion', 'source', 'status', 'levels'], 'training');
   if (plan.schemaVersion !== 1 || plan.status !== 'design') fail('training', 'неизвестный план');
@@ -195,13 +195,18 @@ export function loadTrainingPlan(input, examples) {
   if (!Array.isArray(plan.levels) || plan.levels.length < 5 || plan.levels.length > 10) fail('training.levels', 'план MVP содержит 5–10 уровней');
   const ids = new Set(), titles = new Set();
   for (const level of plan.levels) {
-    keys(level, ['id', 'title', 'description', 'status', 'missionExample', 'introduces', 'showFutureTrajectory', 'showMotionVector', 'steps', 'deadlineClock'], 'training.level');
+    keys(level, ['id', 'title', 'description', 'status', 'missionExample', 'introduces', 'showFutureTrajectory', 'showMotionVector', 'steps', 'deadlineClock', 'campaignLevel'], 'training.level');
     id(level.id, 'training.level.id'); text(level.title, 'training.level.title'); text(level.description, 'training.level.description');
     if (ids.has(level.id) || titles.has(level.title)) fail('training.level', 'повторяющийся уровень');
     ids.add(level.id); titles.add(level.title);
     if (level.status !== 'design' || level.showFutureTrajectory !== false || level.showMotionVector !== true) fail('training.level', 'неверный статус или подсказка');
     text(level.introduces, 'training.level.introduces');
     if (level.deadlineClock !== undefined && ![null, 'earth', 'ship'].includes(level.deadlineClock)) fail('training.level.deadlineClock', 'неизвестные часы');
+    if (level.campaignLevel !== undefined) {
+      const authored = campaign.find(item => item.id === level.campaignLevel);
+      if (!authored || authored.purpose !== 'campaign' || authored.id !== level.id) fail('training.level.campaignLevel', 'нет данных уровня кампании');
+      loadLevel(authored);
+    }
     const example = examples.find(example => example.id === level.missionExample);
     if (!example || example.purpose !== 'contract-example') fail('training.level.missionExample', 'нет примера формата');
     loadLevel({ ...example, tutorial: { showFutureTrajectory: false, showMotionVector: true, steps: level.steps } });

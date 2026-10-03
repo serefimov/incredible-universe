@@ -20,6 +20,8 @@ const game = selectedLevel ? createGameFromLevel(selectedLevel) : createGame();
 const missionText = element('mission'), resultText = element('result');
 missionText.hidden = !game.level;
 let ui;
+element('training-link').hidden = Boolean(game.level);
+if (game.level?.purpose === 'campaign') element('title').textContent = game.level.title;
 const earthLabel = element('earth-clock-label');
 const earthClock = element('earth-clock');
 const observerBody = earthClockBody(game);

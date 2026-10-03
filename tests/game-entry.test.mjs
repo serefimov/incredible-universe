@@ -10,3 +10,11 @@ test('свободная сцена остаётся основной; прим�
     assert.ok(level,id);assert.equal(level.purpose,'contract-example');assert.ok(Object.isFrozen(level.mission));
   }
 });
+
+test('готовый первый уровень кампании выбирается отдельно от примеров контракта', () => {
+  const level = levelFromSearch('?mission=training-1');
+  assert.equal(level.purpose, 'campaign');
+  assert.equal(level.title, 'Первое вмешательство');
+  assert.equal(level.universe.tray.planet.count, 1);
+  assert.ok(Object.isFrozen(level.universe));
+});

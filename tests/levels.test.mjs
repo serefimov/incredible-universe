@@ -6,6 +6,7 @@ import { createGameFromLevel, placeBody, moveBody, removeBody, resetGame, startG
 import { stepSimulation, advanceFrame } from '../src/physics.js';
 import { clockIncrement, potentialAt } from '../src/clocks.js';
 const examples = JSON.parse(readFileSync(new URL('../levels/mission-examples.json', import.meta.url), 'utf8'));
+const campaign = JSON.parse(readFileSync(new URL('../levels/campaign.json', import.meta.url), 'utf8'));
 const example = (index = 0) => structuredClone(examples[index]);
 const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-10, `${a} != ${b}`);
 const physical = game => structuredClone({ ship: game.simulation.ship, bodies: game.simulation.bodies,
@@ -174,11 +175,11 @@ test('привязанные земные часы учитывают тольк
 
 test('все шесть названий обучения и первый аварийный запуск сохранены в плане', () => {
   const input = JSON.parse(readFileSync(new URL('../levels/training-plan.json', import.meta.url), 'utf8'));
-  const plan = loadTrainingPlan(input, examples);
+  const plan = loadTrainingPlan(input, examples, campaign);
   assert.deepEqual(plan.levels.map(level => level.title), ['Первое вмешательство', 'Гравитационный манёвр', 'Мягкое прибытие', 'Наперегонки со временем', 'Окно встречи', 'Без подсказок']);
   assert.deepEqual(plan.levels[0].steps.map(step => step.availableCounts.planet), [0, 1]);
   assert.ok(plan.levels.slice(3).every(level => level.deadlineClock === 'ship'));
   assert.throws(() => createGameFromLevel(plan.levels[0]), TypeError, 'дизайн не выдаётся за играбельную сцену');
   input.levels[1].missionExample = 'missing';
-  assert.throws(() => loadTrainingPlan(input, examples), /примера/);
+  assert.throws(() => loadTrainingPlan(input, examples, campaign), /примера/);
 });
