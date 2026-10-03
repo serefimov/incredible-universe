@@ -110,7 +110,8 @@ with sync_playwright() as p:
     assert len(state()['configuration']['placed']) == 1
     camera = state()['camera']
     drag(at(-350, -140), at(-310, -120))
-    assert abs(state()['configuration']['placed'][0]['x'] + 310) < 1e-8
+    # Chromium Touch -> Pointer coordinates are rounded to CSS pixels.
+    assert abs(state()['configuration']['placed'][0]['x'] + 310) < 2, state()['configuration']
     assert state()['camera'] == camera
     # Invalid position is shown while the existing-body preview is still separate.
     before = state()['configuration']
