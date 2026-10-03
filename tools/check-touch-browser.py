@@ -36,7 +36,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             navigation = json.loads(json.dumps(fixture))
             navigation.update(id='test-navigation', title='Проверка камеры в полёте', description='Длительный полёт для проверки ручной камеры.')
             navigation['mission'] = dict(type='arrival', maxCoordinateYears=100000,
-                target=dict(centre=dict(kind='fixed', x=100000000, y=0), radius=3))
+                target=dict(centre=dict(kind='fixed', x=100000000, y=0), radius=3), limits={})
             levels.append(navigation)
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
