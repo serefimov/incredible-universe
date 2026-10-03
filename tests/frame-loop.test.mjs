@@ -21,7 +21,7 @@ test('реальный кадровый цикл пропускает фон, о
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8')
     .replace(/^import .*;$/gm, '');
   vm.runInNewContext(source, { document, performance: { now: () => now },
-    createGame: () => (game = createGame()), earthClockBody, missionDisplay, levelFromSearch: () => null, resetGame, startGame, advanceFrame, discardFrameTime,
+    createGame: () => (game = createGame()), createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, levelFromSearch: () => null, resetGame, startGame, advanceFrame, discardFrameTime,
     followShip, createInput: () => ({ cancel() {}, state: {} }),
     createRenderer: () => ({ resize() {}, draw() {}, viewport: {} }),
     ResizeObserver: class { observe() {} }, requestAnimationFrame: fn => { callback = fn; } });
@@ -57,7 +57,7 @@ test('уход в фон, Reset и Play отменяют реальные жес
   const nodes = new Map(), handlers = {};
   const element = id => {
     if (!nodes.has(id)) {
-      const rect = id === 'c' ? { left: 0, top: 48, right: 1000, bottom: 742 } : { left: 0, top: 742, right: 1000, bottom: 844 };
+      const rect = !['tray', 'tray-toggle'].includes(id) ? { left: 0, top: 48, right: 1000, bottom: 742 } : { left: 0, top: 742, right: 1000, bottom: 844 };
       const captures = new Set();
       nodes.set(id, { dataset: {}, handlers: {}, classList: { toggle() {} }, setAttribute() {},
         getBoundingClientRect: () => rect, addEventListener(name, fn) { this.handlers[name] = fn; },
@@ -71,7 +71,7 @@ test('уход в фон, Reset и Play отменяют реальные жес
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8').replace(/^import .*;$/gm, '');
   const viewport = { width: 1000, height: 694 };
   vm.runInNewContext(source, { document, performance: { now: () => now },
-    createGame: () => (game = createGame()), earthClockBody, missionDisplay, levelFromSearch: () => null, resetGame, startGame, advanceFrame, discardFrameTime, followShip,
+    createGame: () => (game = createGame()), createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, levelFromSearch: () => null, resetGame, startGame, advanceFrame, discardFrameTime, followShip,
     createInput: (...args) => (input = createInput(...args)),
     createRenderer: () => ({ viewport, resize() {}, draw() {} }),
     ResizeObserver: class { constructor(fn) { resizeCallback = fn; } observe() {} },

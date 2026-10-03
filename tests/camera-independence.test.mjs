@@ -22,7 +22,7 @@ function dom() {
     const captures = new Set();
     return { style: {}, dataset: { type }, handlers: {}, classList: { toggle() {} },
       setAttribute() {}, getContext: () => context,
-      getBoundingClientRect: () => id === 'tray' || id === 'card' ? trayRect : rect,
+      getBoundingClientRect: () => id === 'tray' || id === 'tray-toggle' || id === 'card' ? trayRect : rect,
       addEventListener(name, fn) { this.handlers[name] = fn; },
       setPointerCapture(id) { captures.add(id); }, hasPointerCapture: id => captures.has(id),
       releasePointerCapture(id) { captures.delete(id); },
@@ -30,7 +30,7 @@ function dom() {
         preventDefault() {}, ...values }); },
     };
   }
-  const nodes = Object.fromEntries(['c', 'stage', 'tray', 'play', 'reset', 'follow', 'status', 'hint', 'earth-time', 'ship-time', 'mission', 'result', 'earth-clock-label', 'earth-clock', 'mission-panel', 'mission-heading', 'mission-body', 'conditions', 'mission-feedback']
+  const nodes = Object.fromEntries(['c', 'stage', 'tray', 'play', 'reset', 'follow', 'status', 'hint', 'earth-time', 'ship-time', 'mission', 'result', 'earth-clock-label', 'earth-clock', 'mission-panel', 'mission-heading', 'mission-body', 'conditions', 'mission-feedback', 'follow-label', 'tray-toggle']
     .map(id => [id, element(id)]));
   const cards = ['planet', 'giant', 'star'].map(type => element('card', type));
   const document = { hidden: false, getElementById: id => nodes[id], querySelectorAll: () => cards,
@@ -102,7 +102,7 @@ function current(placements) {
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8')
     .replace(/^import .*;$/gm, '');
   vm.runInNewContext(source, { document: h.document, performance: { now: () => now },
-    earthClockBody, missionDisplay, levelFromSearch: () => null, createGame: () => {
+    createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, levelFromSearch: () => null, createGame: () => {
       game = createGame();
       for (const p of placements) assert.equal(placeBody(game, ...p), true);
       return game;

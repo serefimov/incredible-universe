@@ -2,7 +2,7 @@
 import { screenToWorld, worldToScreen } from './camera.js';
 import { placeBody, moveBody, removeBody, availableCount, canEditConfiguration } from './state.js';
 
-export function createInput(game, { canvas, tray, cards, getViewport }, changed) {
+export function createInput(game, { canvas, tray, cards, getViewport, isOverTray }, changed) {
   // Gesture previews are UI state. They never write simulation positions.
   const input = { drag: null, pan: null, pinch: null, pointers: new Map() };
   const captures = new Map();
@@ -16,6 +16,7 @@ export function createInput(game, { canvas, tray, cards, getViewport }, changed)
     return screenToWorld(game.camera, getViewport(), p.x, p.y);
   };
   const overTray = event => {
+    if (isOverTray) return isOverTray(event);
     const r = tray.getBoundingClientRect();
     return event.clientX >= r.left && event.clientX <= r.right &&
       event.clientY >= r.top && event.clientY <= r.bottom;
@@ -138,4 +139,3 @@ export function createInput(game, { canvas, tray, cards, getViewport }, changed)
   }, { passive: false });
   return { state: input, cancel };
 }
-

@@ -69,26 +69,38 @@ with sync_playwright() as p:
         page.wait_for_function('typeof inspectGame === "function"')
         page.wait_for_timeout(100)
         boxes = page.evaluate('''() => {
-          const ids = ['follow','play','reset','clocks','stage','tray'];
-          const nodes = [...ids.map(id => document.getElementById(id)), ...document.querySelectorAll('.card')];
+          const ids = ['play','reset','follow','info','tray-toggle','clocks','stage','controls'];
+          const nodes = ids.map(id => document.getElementById(id));
           return nodes.map(n => {const r = n.getBoundingClientRect(); return {
             id:n.id || n.dataset.type, x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height};});
         }''')
         for box in boxes:
             assert box['x'] >= -0.1 and box['y'] >= -0.1, box
             assert box['right'] <= width + 0.1 and box['bottom'] <= height + 0.1, box
-            if box['id'] in ['follow', 'play', 'reset', 'planet', 'giant', 'star']:
+            if box['id'] in ['follow', 'play', 'reset', 'info', 'tray-toggle']:
                 assert box['width'] >= 44 and box['height'] >= 44, box
         # Controls must remain separate, not merely have on-screen bounding boxes.
         buttons = boxes[:3]
         for a, b in zip(buttons, buttons[1:]):
             assert a['right'] <= b['x'], (a, b)
         stage = next(b for b in boxes if b['id'] == 'stage')
-        tray = next(b for b in boxes if b['id'] == 'tray')
+        tray = next(b for b in boxes if b['id'] == 'controls')
         assert stage['height'] >= 100 and stage['bottom'] <= tray['y'], boxes
         assert page.evaluate('getComputedStyle(document.querySelector("canvas")).touchAction') == 'none'
         assert page.evaluate('document.documentElement.scrollWidth') <= width
+        assert page.locator('#tray').is_hidden()
+        assert page.locator('#mission-panel').is_hidden()
+        for selector in ['#play', '#reset', '#follow']:
+            box = page.locator(selector).bounding_box()
+            assert box['width'] >= 60 and box['height'] >= 60
+            assert box['y'] > height / 2
         page.screenshot(path=str(OUTPUT / f'{width}x{height}.png'))
+        page.locator('#tray-toggle').tap()
+        for card in page.locator('.card').all():
+            box = card.bounding_box()
+            assert box['width'] >= 44 and box['height'] >= 44
+            assert box['y'] >= 0 and box['y'] + box['height'] <= height
+        page.screenshot(path=str(OUTPUT / f'drawer-{width}x{height}.png'))
         print(f'PASS layout {width}x{height}', flush=True)
         context.close()
 
@@ -125,6 +137,7 @@ with sync_playwright() as p:
         touch('touchMove', 1, end)
         touch('touchEnd', 1)
 
+    page.locator('#tray-toggle').tap()
     drag(centre('[data-type=planet]'), at(-350, -140))
     assert len(state()['configuration']['placed']) == 1
     camera = state()['camera']
@@ -161,8 +174,10 @@ with sync_playwright() as p:
     assert state()['configuration'] == before
     assert page.evaluate('visualViewport.scale') == 1, 'pinch must zoom the game, not the page'
     # Returning the planet to the tray removes it; it can be placed again.
-    drag(at(-310, -120), centre('#tray'))
+    page.locator('#tray-toggle').tap()
+    drag(at(-310, -120), centre('#tray-toggle'))
     assert not state()['configuration']['placed']
+    page.locator('#tray-toggle').tap()
     drag(centre('[data-type=planet]'), at(-350, -140))
     assert len(state()['configuration']['placed']) == 1
     initial = state()['configuration']
@@ -198,20 +213,34 @@ with sync_playwright() as p:
     print('PASS standalone HTML Play and Reset', flush=True)
     # Mission examples are embedded into the same standalone HTML, without fetches.
     page.goto(url + '/dist/game/index.html?mission=example-survival')
+    assert page.locator('#mission-panel').is_hidden()
+    page.locator('#info').tap()
     assert page.locator('#mission').is_visible()
     assert page.locator('#earth-clock').is_hidden()
     assert page.locator('#ship-clock').is_visible()
     page.locator('#play').tap()
     page.wait_for_function('document.getElementById("status").textContent.includes("Победа")')
+    box = page.locator('#outcome-overlay').bounding_box()
+    assert box['x'] == 0 and box['y'] == 0
+    assert box['width'] == 844 and box['height'] == 390
+    page.screenshot(path=str(OUTPUT / 'fullscreen-win.png'))
+    # Dismissing directly over Reset must not reset the simulation underneath.
+    page.touchscreen.tap(*centre('#reset'))
+    assert 'Победа' in page.locator('#status').inner_text()
+    assert page.locator('#play').is_disabled()
+    page.locator('#info').tap()
     assert 'выживания' in page.locator('#result').inner_text()
     assert page.locator('#play').is_disabled()
     page.locator('#reset').tap()
     assert page.locator('#result').is_hidden()
     page.locator('#play').tap()
     page.wait_for_function('document.getElementById("status").textContent.includes("Победа")')
+    page.locator('#outcome-overlay').tap()
     page.goto(url + '/dist/game/index.html?mission=example-region')
     page.locator('#play').tap()
     page.wait_for_function('document.getElementById("status").textContent.includes("Поражение")')
+    page.locator('#outcome-overlay').tap()
+    page.locator('#info').tap()
     assert 'Столкновение' in page.locator('#result').inner_text()
     page.set_viewport_size({'width': 390, 'height': 844})
     page.goto(url + '/dist/game/index.html?mission=example-earth-return')
@@ -229,9 +258,11 @@ with sync_playwright() as p:
         page.set_viewport_size(dict(width=width, height=height))
         for mission in ['example-survival', 'example-speed-time', 'example-earth-return']:
             page.goto(url + '/dist/game/index.html?mission=' + mission)
+            assert page.locator('#mission-panel').is_hidden()
+            page.locator('#info').tap()
             assert page.locator('#mission-panel').is_visible()
             assert page.locator('#earth-clock').is_visible() == (mission == 'example-earth-return')
-            for selector in ['#play', '#reset', '#follow', '#tray', '#mission-panel']:
+            for selector in ['#play', '#reset', '#follow', '#tray-toggle', '#mission-panel']:
                 box = page.locator(selector).bounding_box()
                 assert box['x'] >= 0 and box['y'] >= 0, (selector, box)
                 assert box['x'] + box['width'] <= width + 0.1, (selector, box)
@@ -241,7 +272,7 @@ with sync_playwright() as p:
             page.locator('#mission-body').evaluate('(n) => n.scrollTop = n.scrollHeight')
             assert page.locator('#units-note').is_visible()
             page.screenshot(path=str(OUTPUT / f'mission-{mission}-{width}x{height}.png'))
-            page.locator('#mission-heading').tap()
+            page.locator('#info').tap()
             assert page.locator('#conditions').is_hidden()
             assert page.locator('#stage').bounding_box()['height'] >= 100
             page.locator('#play').tap()
@@ -250,10 +281,11 @@ with sync_playwright() as p:
     page.set_viewport_size(dict(width=390, height=844))
     page.goto(url + '/?mission=test-long-ui')
     page.wait_for_function('typeof inspectGame === "function"')
+    page.locator('#info').tap()
     assert page.locator('#mission-body').evaluate('(n) => n.scrollHeight > n.clientHeight')
     page.locator('#mission-body').evaluate('(n) => n.scrollTop = n.scrollHeight')
     assert '≤ 9' in page.locator('#conditions').inner_text()
-    page.locator('#mission-heading').tap()
+    page.locator('#info').tap()
     page.locator('#play').tap()
     page.wait_for_function('document.getElementById("mission-feedback").textContent.includes("Корабль в области")')
     assert page.locator('#result').is_hidden()
@@ -262,7 +294,13 @@ with sync_playwright() as p:
     assert 'Часы корабля' in feedback
     assert 'Скорость относительно цели' in feedback
     page.wait_for_function('inspectGame().simulation.status === "lose"')
-    assert page.locator('#result').is_visible(), 'terminal result reopens collapsed panel'
+    assert page.locator('#mission-panel').is_hidden()
+    assert page.locator('#outcome-overlay').is_visible()
+    page.wait_for_function('document.getElementById("outcome-overlay").hidden')
+    assert state()['simulation']['status'] == 'lose'
+    assert page.locator('#play').is_disabled()
+    page.locator('#info').tap()
+    assert page.locator('#result').is_visible()
     assert 'На момент завершения' in page.locator('#result').inner_text()
     assert page.locator('#earth-clock').is_hidden()
     page.screenshot(path=str(OUTPUT / 'long-mission-result.png'))
@@ -270,6 +308,16 @@ with sync_playwright() as p:
     assert page.locator('#result').is_hidden()
     assert page.locator('#ship-time').inner_text() == '0.00'
     print('PASS long task scrolling, early/fast entry continues, terminal panel and Reset', flush=True)
+    page.emulate_media(reduced_motion='reduce')
+    page.goto(url + '/dist/game/index.html?mission=example-survival')
+    page.locator('#play').tap()
+    page.wait_for_function('document.getElementById("status").textContent.includes("Победа")')
+    assert page.locator('#outcome-overlay').evaluate('(n) => getComputedStyle(n).transitionDuration') == '0s'
+    page.wait_for_function('document.getElementById("outcome-overlay").hidden')
+    assert page.locator('#play').is_disabled()
+    page.locator('#info').tap()
+    assert 'Победа' in page.locator('#result').inner_text()
+    print('PASS reduced motion keeps result after notification disappears', flush=True)
     assert not errors, errors
     browser.close()
 server.shutdown()

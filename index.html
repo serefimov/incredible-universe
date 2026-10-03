@@ -11,34 +11,41 @@
  <div id="top">
   <div id="title">The Incredible Universe</div>
   <div id="status">готово</div>
-  <button id="follow">🎯 Корабль</button>
-  <button id="play" aria-label="Запустить симуляцию" title="Запустить симуляцию">▶</button>
-  <button id="reset" aria-label="Вернуться к начальным условиям" title="Вернуться к начальным условиям">↻</button>
  </div>
  <div id="clocks" role="group" aria-label="Время с начала полёта">
   <span id="ship-clock">Корабль: <output id="ship-time">0.00</output> лет</span>
   <span id="earth-clock" hidden><span id="earth-clock-label">Земля:</span> <output id="earth-time">0.00</output> лет</span>
  </div>
- <details id="mission-panel" open hidden>
-  <summary id="mission-heading">Цель и условия</summary>
+ <section id="mission-panel" hidden aria-labelledby="mission-heading">
+  <header class="sheet-heading"><h2 id="mission-heading">Цель и условия</h2><button id="info-close" aria-label="Закрыть информацию">×</button></header>
   <div id="mission-body" tabindex="0" aria-label="Задание, условия и результат">
    <div id="mission" hidden></div>
    <div id="conditions"></div>
    <div id="mission-feedback"></div>
    <div id="result" role="status" hidden></div>
+  <div id="hint"><b>До запуска:</b> тащи пустое место одним пальцем — двигай карту; колёсико/щипок — масштаб. Тела из ящика можно переставлять. <b>После ▶ камера следует за кораблём.</b></div>
    <small id="units-note">Часы показывают собственные годы с начала полёта. Мир. ед. — единицы карты. Показания округлены; ✓ означает выполнение без округления. Время модели — координатное время симуляции.</small>
   </div>
- </details>
+ </section>
  <div id="stage">
   <canvas id="c" aria-label="Карта Вселенной"></canvas>
-  <div id="hint"><b>До запуска:</b> тащи пустое место одним пальцем — двигай карту; колёсико/щипок — масштаб. Тела из ящика можно переставлять. <b>После ▶ камера следует за кораблём.</b></div>
  </div>
- <div id="tray">
+ <div id="tray" hidden aria-label="Ящик небесных тел">
    <div class="card" data-type="planet"><div class="icon">🌍</div><small>ПЛАНЕТА</small></div>
    <div class="card" data-type="giant"><div class="icon">🪐</div><small>ГИГАНТ</small></div>
    <div class="card" data-type="star"><div class="icon">⭐</div><small>ЗВЕЗДА</small></div>
    <div id="trayText"><span class="accent">v₀ = 0</span> у всех добавленных тел.<br> ↻ сохраняет расстановку.<br> Тело можно вернуть в ящик.</div>
  </div>
+ <nav id="controls" aria-label="Управление опытом">
+  <button id="play" aria-label="Запустить симуляцию"><span class="symbol">▶</span><small>Пуск</small></button>
+  <button id="reset" aria-label="Вернуться к начальным условиям"><span class="symbol">↻</span><small>Сброс</small></button>
+  <button id="follow" aria-label="Центрировать камеру и переключить слежение"><span class="symbol">◎</span><small id="follow-label">Корабль</small></button>
+  <button id="tray-toggle" aria-label="Открыть ящик; перенесите сюда тело для удаления" aria-controls="tray" aria-expanded="false"><span class="symbol">▣</span><small id="tray-label">Тела</small></button>
+  <button id="info" aria-label="Задание, условия и результат" aria-controls="mission-panel" aria-expanded="false"><span class="symbol">i</span><small>Инфо</small></button>
+ </nav>
 </div>
+<button id="outcome-overlay" hidden aria-label="Закрыть сообщение о результате">
+ <span id="outcome-title"></span><span id="outcome-reason"></span><small>Коснитесь, чтобы закрыть · подробности в i</small>
+</button>
 <script type="module" src="./src/main.js"></script>
 </body></html>
