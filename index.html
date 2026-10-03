@@ -19,9 +19,17 @@
   <span id="ship-clock">Корабль: <output id="ship-time">0.00</output> лет</span>
   <span id="earth-clock" hidden><span id="earth-clock-label">Земля:</span> <output id="earth-time">0.00</output> лет</span>
  </div>
- <div id="mission" hidden></div>
+ <details id="mission-panel" open hidden>
+  <summary id="mission-heading">Цель и условия</summary>
+  <div id="mission-body" tabindex="0" aria-label="Задание, условия и результат">
+   <div id="mission" hidden></div>
+   <div id="conditions"></div>
+   <div id="mission-feedback"></div>
+   <div id="result" role="status" hidden></div>
+   <small id="units-note">Корабль и Земля: собственные годы с начала полёта. Мир. ед. — единицы карты. Показания округлены; ✓ означает выполнение без округления. Время модели — координатное, это не часы Земли.</small>
+  </div>
+ </details>
  <div id="stage">
-  <div id="result" role="status" hidden></div>
   <canvas id="c" aria-label="Карта Вселенной"></canvas>
   <div id="hint"><b>До запуска:</b> тащи пустое место одним пальцем — двигай карту; колёсико/щипок — масштаб. Тела из ящика можно переставлять. <b>После ▶ камера следует за кораблём.</b></div>
  </div>
@@ -34,4 +42,3 @@
 </div>
 <script type="module" src="./src/main.js"></script>
 </body></html>
-

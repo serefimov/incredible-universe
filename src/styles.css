@@ -38,8 +38,16 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
   #trayText{font-size:9px}
 }
 
-#mission{flex-shrink:0;max-height:100px;overflow:auto;white-space:pre-line;font-size:11px;line-height:1.3;padding:6px 10px;background:#0b1020}
-#mission[hidden],#result[hidden]{display:none}
-#result{position:absolute;left:10px;right:10px;bottom:10px;z-index:1;padding:8px 10px;border-radius:9px;background:#080c16e8;font-size:13px;pointer-events:none}
+#mission-panel{flex-shrink:0;background:#0b1020;border-bottom:1px solid #24304a;font-size:13px;line-height:1.4}
+#mission-panel summary{min-height:44px;box-sizing:border-box;padding:12px max(10px,env(safe-area-inset-left));cursor:pointer;touch-action:manipulation;font-weight:700}
+#mission-body{position:relative;max-height:min(24dvh,180px);overflow-y:auto;overscroll-behavior:contain;padding:0 max(10px,env(safe-area-inset-right)) 10px max(10px,env(safe-area-inset-left));scrollbar-gutter:stable}
+#mission,#conditions,#result{white-space:pre-line;overflow-wrap:anywhere}
+#mission{font-weight:600;margin-bottom:8px}
+#conditions{font-variant-numeric:tabular-nums;color:#d0e5f4}
+#mission-feedback{margin:8px 0;color:#d9c98e}
+#result{padding:8px;border:1px solid #526685;border-radius:9px;background:#14203a;font-variant-numeric:tabular-nums}
+#units-note{display:block;margin-top:8px;color:#aeb9d3;font-size:11px}
+#mission-panel[hidden],#mission[hidden],#result[hidden]{display:none}
+@media(max-height:500px){#mission-body{max-height:22dvh}#mission-panel summary{padding-top:10px;padding-bottom:10px}}
 
 #earth-clock[hidden]{display:none}
