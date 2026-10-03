@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "source": "docs/LEVELS.md",
+  "status": "design",
+  "levels": [
+    {
+      "id": "training-1",
+      "title": "Первое вмешательство",
+      "description": "Познакомить игрока с основной механикой игры: траекторией корабля можно управлять не напрямую, а изменяя его гравитационное окружение.",
+      "status": "design",
+      "missionExample": "example-survival",
+      "introduces": "gravity-environment",
+      "showFutureTrajectory": false,
+      "showMotionVector": true,
+      "steps": [
+        {
+          "id": "observe-collision",
+          "text": "Ничего не меняйте и нажмите Play.",
+          "until": "collision",
+          "availableCounts": {
+            "planet": 0
+          }
+        },
+        {
+          "id": "intervene",
+          "text": "Перезапустите опыт и разместите одну планету.",
+          "until": "success",
+          "availableCounts": {
+            "planet": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "training-2",
+      "title": "Гравитационный манёвр",
+      "description": "Научить игрока использовать гравитацию не только для предотвращения столкновения, но и для целенаправленного изменения траектории.",
+      "status": "design",
+      "missionExample": "example-region",
+      "introduces": "target-region",
+      "showFutureTrajectory": false,
+      "showMotionVector": true,
+      "steps": []
+    },
+    {
+      "id": "training-3",
+      "title": "Мягкое прибытие",
+      "description": "Показать, что достижения нужной точки пространства недостаточно: важна также скорость корабля в момент прибытия.",
+      "status": "design",
+      "missionExample": "example-speed-time",
+      "introduces": "relative-arrival-speed",
+      "showFutureTrajectory": false,
+      "showMotionVector": true,
+      "steps": []
+    },
+    {
+      "id": "training-4",
+      "title": "Наперегонки со временем",
+      "description": "Добавить время полёта как ещё один параметр задачи.",
+      "status": "design",
+      "missionExample": "example-proper-time",
+      "introduces": "deadline",
+      "showFutureTrajectory": false,
+      "showMotionVector": true,
+      "steps": [],
+      "deadlineClock": "ship"
+    },
+    {
+      "id": "training-5",
+      "title": "Окно встречи",
+      "description": "Научить игрока учитывать одновременно движение корабля и движение целевого небесного тела.",
+      "status": "design",
+      "missionExample": "example-speed-time",
+      "introduces": "moving-target",
+      "showFutureTrajectory": false,
+      "showMotionVector": true,
+      "steps": [],
+      "deadlineClock": "ship"
+    },
+    {
+      "id": "training-6",
+      "title": "Без подсказок",
+      "description": "Проверить, способен ли игрок самостоятельно объединить все изученные механики.",
+      "status": "design",
+      "missionExample": "example-speed-time",
+      "introduces": "combine-skills",
+      "showFutureTrajectory": false,
+      "showMotionVector": true,
+      "steps": [],
+      "deadlineClock": "ship"
+    }
+  ]
+}

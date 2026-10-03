@@ -72,9 +72,18 @@ export function calculateClocks(simulation, committed, model, duration) {
   if (!observer || !['x', 'y', 'vx', 'vy'].every(key => Number.isFinite(observer[key]))) {
     throw new RangeError('Некорректный земной наблюдатель');
   }
-  const earthObserver = { ...observer,
+  let earthObserver;
+  if (simulation.earthBinding) {
+    const binding = simulation.earthBinding;
+    const index = simulation.bodies.findIndex(body => body.id === binding.bodyId);
+    if (index < 0 || !binding.offset || ![binding.offset.x, binding.offset.y].every(Number.isFinite)) {
+      throw new RangeError('Некорректная привязка земного наблюдателя');
+    }
+    const body = committed[index];
+    earthObserver = { x: body.x + binding.offset.x, y: body.y + binding.offset.y, vx: body.vx, vy: body.vy };
+  } else earthObserver = { ...observer,
     x: observer.x + observer.vx * duration, y: observer.y + observer.vy * duration };
-  if (![earthObserver.x, earthObserver.y].every(Number.isFinite)) {
+  if (![earthObserver.x, earthObserver.y, earthObserver.vx, earthObserver.vy].every(Number.isFinite)) {
     throw new RangeError('Переполнение позиции земного наблюдателя');
   }
   const bodies = simulation.bodies.map((body, i) => ({ ...body, ...midpoint(body, committed[i]) }));
@@ -82,7 +91,7 @@ export function calculateClocks(simulation, committed, model, duration) {
   const increments = clockIncrement(ship.vx, ship.vy, duration, CLOCK_CONTRACT, {
     shipPotential: potentialAt(midpoint(simulation.ship, ship), bodies, model),
     earthPotential: potentialAt(midpoint(observer, earthObserver), bodies, model),
-    earthVx: observer.vx, earthVy: observer.vy,
+    earthVx: earthObserver.vx, earthVy: earthObserver.vy,
   });
   const earth = sumYears(simulation.earthYears, simulation.earthCorrection, increments.earth);
   const onBoard = sumYears(simulation.shipYears, simulation.shipCorrection, increments.ship);

@@ -1,0 +1,714 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "example-survival",
+    "title": "Выжить заданное время",
+    "description": "Пример формата #8. Числа для проверки контракта, не сбалансированный уровень кампании.",
+    "purpose": "contract-example",
+    "universe": {
+      "id": "example-world",
+      "earthClock": {
+        "x": -700,
+        "y": 130,
+        "vx": 0,
+        "vy": 0,
+        "kind": "inertial"
+      },
+      "physics": {
+        "version": "fixed-euler-swept-v1",
+        "gravity": 7200,
+        "softening": 16,
+        "maxStep": 0.0025,
+        "timeScale": 2.5,
+        "maxFrame": 0.05
+      },
+      "camera": {
+        "x": -250,
+        "y": 40,
+        "zoom": 0.72
+      },
+      "bodies": [
+        {
+          "id": "sun",
+          "type": "fixedStar",
+          "x": 0,
+          "y": 0,
+          "vx": 0,
+          "vy": 0,
+          "m": 3000,
+          "r": 30,
+          "fixed": true,
+          "label": "Солнце"
+        },
+        {
+          "id": "p1",
+          "type": "fixedPlanet",
+          "x": 360,
+          "y": -210,
+          "vx": 0,
+          "vy": 34,
+          "m": 520,
+          "r": 16,
+          "fixed": false,
+          "label": "Аурелия"
+        },
+        {
+          "id": "p2",
+          "type": "fixedPlanet",
+          "x": -520,
+          "y": 310,
+          "vx": 19,
+          "vy": -10,
+          "m": 700,
+          "r": 18,
+          "fixed": false,
+          "label": "Борея"
+        },
+        {
+          "id": "star2",
+          "type": "fixedStar",
+          "x": 980,
+          "y": 180,
+          "vx": 0,
+          "vy": 0,
+          "m": 2200,
+          "r": 25,
+          "fixed": true,
+          "label": "Дальняя звезда"
+        }
+      ],
+      "ship": {
+        "id": "ship",
+        "x": -700,
+        "y": 130,
+        "vx": 58,
+        "vy": -5,
+        "m": 0.001,
+        "r": 5,
+        "fixed": false
+      },
+      "tray": {
+        "planet": {
+          "m": 420,
+          "r": 14,
+          "drawR": 13,
+          "label": "Планета",
+          "count": 2
+        },
+        "giant": {
+          "m": 1450,
+          "r": 20,
+          "drawR": 18,
+          "label": "Гигант",
+          "count": 1
+        },
+        "star": {
+          "m": 4000,
+          "r": 27,
+          "drawR": 22,
+          "label": "Звезда",
+          "count": 1
+        }
+      }
+    },
+    "placement": {
+      "regions": [
+        {
+          "kind": "rect",
+          "xMin": -1000,
+          "xMax": 1500,
+          "yMin": -800,
+          "yMax": 800
+        }
+      ],
+      "shipClearance": 90,
+      "bodyGap": 12
+    },
+    "mission": {
+      "type": "survival",
+      "maxCoordinateYears": 500,
+      "survive": {
+        "clock": "ship",
+        "years": 50
+      }
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "example-region",
+    "title": "Пройти через целевую область",
+    "description": "Пример формата #8. Числа для проверки контракта, не сбалансированный уровень кампании.",
+    "purpose": "contract-example",
+    "universe": {
+      "id": "example-world",
+      "earthClock": {
+        "x": -700,
+        "y": 130,
+        "vx": 0,
+        "vy": 0,
+        "kind": "inertial"
+      },
+      "physics": {
+        "version": "fixed-euler-swept-v1",
+        "gravity": 7200,
+        "softening": 16,
+        "maxStep": 0.0025,
+        "timeScale": 2.5,
+        "maxFrame": 0.05
+      },
+      "camera": {
+        "x": -250,
+        "y": 40,
+        "zoom": 0.72
+      },
+      "bodies": [
+        {
+          "id": "sun",
+          "type": "fixedStar",
+          "x": 0,
+          "y": 0,
+          "vx": 0,
+          "vy": 0,
+          "m": 3000,
+          "r": 30,
+          "fixed": true,
+          "label": "Солнце"
+        },
+        {
+          "id": "p1",
+          "type": "fixedPlanet",
+          "x": 360,
+          "y": -210,
+          "vx": 0,
+          "vy": 34,
+          "m": 520,
+          "r": 16,
+          "fixed": false,
+          "label": "Аурелия"
+        },
+        {
+          "id": "p2",
+          "type": "fixedPlanet",
+          "x": -520,
+          "y": 310,
+          "vx": 19,
+          "vy": -10,
+          "m": 700,
+          "r": 18,
+          "fixed": false,
+          "label": "Борея"
+        },
+        {
+          "id": "star2",
+          "type": "fixedStar",
+          "x": 980,
+          "y": 180,
+          "vx": 0,
+          "vy": 0,
+          "m": 2200,
+          "r": 25,
+          "fixed": true,
+          "label": "Дальняя звезда"
+        }
+      ],
+      "ship": {
+        "id": "ship",
+        "x": -700,
+        "y": 130,
+        "vx": 58,
+        "vy": -5,
+        "m": 0.001,
+        "r": 5,
+        "fixed": false
+      },
+      "tray": {
+        "planet": {
+          "m": 420,
+          "r": 14,
+          "drawR": 13,
+          "label": "Планета",
+          "count": 2
+        },
+        "giant": {
+          "m": 1450,
+          "r": 20,
+          "drawR": 18,
+          "label": "Гигант",
+          "count": 1
+        },
+        "star": {
+          "m": 4000,
+          "r": 27,
+          "drawR": 22,
+          "label": "Звезда",
+          "count": 1
+        }
+      }
+    },
+    "placement": {
+      "regions": [
+        {
+          "kind": "rect",
+          "xMin": -1000,
+          "xMax": 1500,
+          "yMin": -800,
+          "yMax": 800
+        }
+      ],
+      "shipClearance": 90,
+      "bodyGap": 12
+    },
+    "mission": {
+      "type": "arrival",
+      "maxCoordinateYears": 500,
+      "target": {
+        "centre": {
+          "kind": "fixed",
+          "x": 500,
+          "y": 0
+        },
+        "radius": 100
+      },
+      "limits": {}
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "example-proper-time",
+    "title": "Достичь области за собственное время",
+    "description": "Пример формата #8. Числа для проверки контракта, не сбалансированный уровень кампании.",
+    "purpose": "contract-example",
+    "universe": {
+      "id": "example-world",
+      "earthClock": {
+        "x": -700,
+        "y": 130,
+        "vx": 0,
+        "vy": 0,
+        "kind": "inertial"
+      },
+      "physics": {
+        "version": "fixed-euler-swept-v1",
+        "gravity": 7200,
+        "softening": 16,
+        "maxStep": 0.0025,
+        "timeScale": 2.5,
+        "maxFrame": 0.05
+      },
+      "camera": {
+        "x": -250,
+        "y": 40,
+        "zoom": 0.72
+      },
+      "bodies": [
+        {
+          "id": "sun",
+          "type": "fixedStar",
+          "x": 0,
+          "y": 0,
+          "vx": 0,
+          "vy": 0,
+          "m": 3000,
+          "r": 30,
+          "fixed": true,
+          "label": "Солнце"
+        },
+        {
+          "id": "p1",
+          "type": "fixedPlanet",
+          "x": 360,
+          "y": -210,
+          "vx": 0,
+          "vy": 34,
+          "m": 520,
+          "r": 16,
+          "fixed": false,
+          "label": "Аурелия"
+        },
+        {
+          "id": "p2",
+          "type": "fixedPlanet",
+          "x": -520,
+          "y": 310,
+          "vx": 19,
+          "vy": -10,
+          "m": 700,
+          "r": 18,
+          "fixed": false,
+          "label": "Борея"
+        },
+        {
+          "id": "star2",
+          "type": "fixedStar",
+          "x": 980,
+          "y": 180,
+          "vx": 0,
+          "vy": 0,
+          "m": 2200,
+          "r": 25,
+          "fixed": true,
+          "label": "Дальняя звезда"
+        }
+      ],
+      "ship": {
+        "id": "ship",
+        "x": -700,
+        "y": 130,
+        "vx": 58,
+        "vy": -5,
+        "m": 0.001,
+        "r": 5,
+        "fixed": false
+      },
+      "tray": {
+        "planet": {
+          "m": 420,
+          "r": 14,
+          "drawR": 13,
+          "label": "Планета",
+          "count": 2
+        },
+        "giant": {
+          "m": 1450,
+          "r": 20,
+          "drawR": 18,
+          "label": "Гигант",
+          "count": 1
+        },
+        "star": {
+          "m": 4000,
+          "r": 27,
+          "drawR": 22,
+          "label": "Звезда",
+          "count": 1
+        }
+      }
+    },
+    "placement": {
+      "regions": [
+        {
+          "kind": "rect",
+          "xMin": -1000,
+          "xMax": 1500,
+          "yMin": -800,
+          "yMax": 800
+        }
+      ],
+      "shipClearance": 90,
+      "bodyGap": 12
+    },
+    "mission": {
+      "type": "arrival",
+      "maxCoordinateYears": 500,
+      "target": {
+        "centre": {
+          "kind": "fixed",
+          "x": 500,
+          "y": 0
+        },
+        "radius": 100
+      },
+      "limits": {
+        "shipYears": {
+          "max": 100
+        }
+      }
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "example-speed-time",
+    "title": "Прибыть с допустимой скоростью и временем",
+    "description": "Пример формата #8. Числа для проверки контракта, не сбалансированный уровень кампании.",
+    "purpose": "contract-example",
+    "universe": {
+      "id": "example-world",
+      "earthClock": {
+        "x": -700,
+        "y": 130,
+        "vx": 0,
+        "vy": 0,
+        "kind": "inertial"
+      },
+      "physics": {
+        "version": "fixed-euler-swept-v1",
+        "gravity": 7200,
+        "softening": 16,
+        "maxStep": 0.0025,
+        "timeScale": 2.5,
+        "maxFrame": 0.05
+      },
+      "camera": {
+        "x": -250,
+        "y": 40,
+        "zoom": 0.72
+      },
+      "bodies": [
+        {
+          "id": "sun",
+          "type": "fixedStar",
+          "x": 0,
+          "y": 0,
+          "vx": 0,
+          "vy": 0,
+          "m": 3000,
+          "r": 30,
+          "fixed": true,
+          "label": "Солнце"
+        },
+        {
+          "id": "p1",
+          "type": "fixedPlanet",
+          "x": 360,
+          "y": -210,
+          "vx": 0,
+          "vy": 34,
+          "m": 520,
+          "r": 16,
+          "fixed": false,
+          "label": "Аурелия"
+        },
+        {
+          "id": "p2",
+          "type": "fixedPlanet",
+          "x": -520,
+          "y": 310,
+          "vx": 19,
+          "vy": -10,
+          "m": 700,
+          "r": 18,
+          "fixed": false,
+          "label": "Борея"
+        },
+        {
+          "id": "star2",
+          "type": "fixedStar",
+          "x": 980,
+          "y": 180,
+          "vx": 0,
+          "vy": 0,
+          "m": 2200,
+          "r": 25,
+          "fixed": true,
+          "label": "Дальняя звезда"
+        }
+      ],
+      "ship": {
+        "id": "ship",
+        "x": -700,
+        "y": 130,
+        "vx": 58,
+        "vy": -5,
+        "m": 0.001,
+        "r": 5,
+        "fixed": false
+      },
+      "tray": {
+        "planet": {
+          "m": 420,
+          "r": 14,
+          "drawR": 13,
+          "label": "Планета",
+          "count": 2
+        },
+        "giant": {
+          "m": 1450,
+          "r": 20,
+          "drawR": 18,
+          "label": "Гигант",
+          "count": 1
+        },
+        "star": {
+          "m": 4000,
+          "r": 27,
+          "drawR": 22,
+          "label": "Звезда",
+          "count": 1
+        }
+      }
+    },
+    "placement": {
+      "regions": [
+        {
+          "kind": "rect",
+          "xMin": -1000,
+          "xMax": 1500,
+          "yMin": -800,
+          "yMax": 800
+        }
+      ],
+      "shipClearance": 90,
+      "bodyGap": 12
+    },
+    "mission": {
+      "type": "arrival",
+      "maxCoordinateYears": 500,
+      "target": {
+        "centre": {
+          "kind": "body",
+          "bodyId": "p1"
+        },
+        "radius": 50
+      },
+      "limits": {
+        "relativeSpeed": {
+          "min": 0,
+          "max": 100
+        },
+        "shipYears": {
+          "max": 100
+        }
+      }
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "example-earth-return",
+    "title": "Вернуться к Земле с двумя временами",
+    "description": "Пример формата #8. Числа для проверки контракта, не сбалансированный уровень кампании.",
+    "purpose": "contract-example",
+    "universe": {
+      "id": "example-world",
+      "earthClock": {
+        "kind": "body",
+        "bodyId": "p1",
+        "offset": {
+          "x": 16,
+          "y": 0
+        }
+      },
+      "physics": {
+        "version": "fixed-euler-swept-v1",
+        "gravity": 7200,
+        "softening": 16,
+        "maxStep": 0.0025,
+        "timeScale": 2.5,
+        "maxFrame": 0.05
+      },
+      "camera": {
+        "x": -250,
+        "y": 40,
+        "zoom": 0.72
+      },
+      "bodies": [
+        {
+          "id": "sun",
+          "type": "fixedStar",
+          "x": 0,
+          "y": 0,
+          "vx": 0,
+          "vy": 0,
+          "m": 3000,
+          "r": 30,
+          "fixed": true,
+          "label": "Солнце"
+        },
+        {
+          "id": "p1",
+          "type": "fixedPlanet",
+          "x": 360,
+          "y": -210,
+          "vx": 0,
+          "vy": 34,
+          "m": 520,
+          "r": 16,
+          "fixed": false,
+          "label": "Аурелия"
+        },
+        {
+          "id": "p2",
+          "type": "fixedPlanet",
+          "x": -520,
+          "y": 310,
+          "vx": 19,
+          "vy": -10,
+          "m": 700,
+          "r": 18,
+          "fixed": false,
+          "label": "Борея"
+        },
+        {
+          "id": "star2",
+          "type": "fixedStar",
+          "x": 980,
+          "y": 180,
+          "vx": 0,
+          "vy": 0,
+          "m": 2200,
+          "r": 25,
+          "fixed": true,
+          "label": "Дальняя звезда"
+        }
+      ],
+      "ship": {
+        "id": "ship",
+        "x": -700,
+        "y": 130,
+        "vx": 58,
+        "vy": -5,
+        "m": 0.001,
+        "r": 5,
+        "fixed": false
+      },
+      "tray": {
+        "planet": {
+          "m": 420,
+          "r": 14,
+          "drawR": 13,
+          "label": "Планета",
+          "count": 2
+        },
+        "giant": {
+          "m": 1450,
+          "r": 20,
+          "drawR": 18,
+          "label": "Гигант",
+          "count": 1
+        },
+        "star": {
+          "m": 4000,
+          "r": 27,
+          "drawR": 22,
+          "label": "Звезда",
+          "count": 1
+        }
+      }
+    },
+    "placement": {
+      "regions": [
+        {
+          "kind": "rect",
+          "xMin": -1000,
+          "xMax": 1500,
+          "yMin": -800,
+          "yMax": 800
+        }
+      ],
+      "shipClearance": 90,
+      "bodyGap": 12
+    },
+    "mission": {
+      "type": "earth-return",
+      "maxCoordinateYears": 2000,
+      "target": {
+        "centre": {
+          "kind": "body",
+          "bodyId": "p1"
+        },
+        "radius": 50
+      },
+      "limits": {
+        "relativeSpeed": {
+          "min": 0,
+          "max": 100
+        },
+        "earthYears": {
+          "min": 300
+        },
+        "shipYears": {
+          "max": 100
+        }
+      }
+    }
+  }
+]
