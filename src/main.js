@@ -70,6 +70,7 @@ play.addEventListener('click', () => {
 });
 reset.addEventListener('click', () => {
   input.cancel(); resetGame(game); updateUI();
+  element('mission-body').scrollTop = 0;
 });
 follow.addEventListener('click', () => {
   game.camera.follow = !game.camera.follow;

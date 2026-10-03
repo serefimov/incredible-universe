@@ -257,9 +257,10 @@ with sync_playwright() as p:
     page.locator('#play').tap()
     page.wait_for_function('document.getElementById("mission-feedback").textContent.includes("Корабль в области")')
     assert page.locator('#result').is_hidden()
-    assert 'Полёт продолжается' in page.locator('#mission-feedback').inner_text()
-    assert 'Часы корабля' in page.locator('#mission-feedback').inner_text()
-    assert 'Скорость относительно цели' in page.locator('#mission-feedback').inner_text()
+    feedback = page.locator('#mission-feedback').text_content()
+    assert 'Полёт продолжается' in feedback
+    assert 'Часы корабля' in feedback
+    assert 'Скорость относительно цели' in feedback
     page.wait_for_function('inspectGame().simulation.status === "lose"')
     assert page.locator('#result').is_visible(), 'terminal result reopens collapsed panel'
     assert 'На момент завершения' in page.locator('#result').inner_text()
