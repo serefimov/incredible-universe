@@ -42,8 +42,8 @@ export function tutorialHint(game) {
     return 'Попытка завершена. Нажмите Сброс, измените положение планеты и попробуйте снова.';
   }
   if (step.until === 'collision') return `${step.text} Стрелка — направление; сверху — часы корабля.`;
-  if (game.configuration.placed.length) return 'Планета на месте — нажмите Пуск. После Сброса её можно переставить или вернуть в ящик за ручку.';
-  return `${step.text} Карта: один палец — сдвиг, два — масштаб.`;
+  if (game.configuration.placed.length) return 'Планета на месте — Пуск. Сброс сохранит её: переставьте или верните в ящик.';
+  return `${step.text} Карта: 1 палец; масштаб: 2.`;
 }
 
 // Prepared copy for later authored scenes (#13), never a claim that they exist.
