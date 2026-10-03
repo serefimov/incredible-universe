@@ -7,10 +7,11 @@ import { createInput } from './input.js';
 import { levelFromSearch } from './game-entry.js';
 import { earthClockBody } from './clock-display.js';
 import { missionDisplay } from './mission-display.js';
+import { createInterface } from './interface.js';
 
 const element = id => document.getElementById(id);
 const canvas = element('c'), stage = element('stage');
-const play = element('play'), reset = element('reset'), follow = element('follow');
+const play = element('play'), follow = element('follow');
 const status = element('status'), hint = element('hint');
 const earthTime = element('earth-time'), shipTime = element('ship-time');
 const cards = [...document.querySelectorAll('.card')];
@@ -18,8 +19,7 @@ const selectedLevel = levelFromSearch(globalThis.location?.search ?? '');
 const game = selectedLevel ? createGameFromLevel(selectedLevel) : createGame();
 const missionText = element('mission'), resultText = element('result');
 missionText.hidden = !game.level;
-const missionPanel = element('mission-panel');
-let wasTerminal = false;
+let ui;
 const earthLabel = element('earth-clock-label');
 const earthClock = element('earth-clock');
 const observerBody = earthClockBody(game);
@@ -29,26 +29,28 @@ if (observerBody) earthLabel.title = `Часы на теле «${observerBody.la
 const renderer = createRenderer(canvas, stage);
 function updateUI() {
   const simulation = game.simulation;
-  play.disabled = simulation.status !== 'ready';
+  const ready = simulation.status === 'ready';
+  play.disabled = false;
+  element('play-symbol').textContent = ready ? '▶' : '↻';
+  element('play-label').textContent = ready ? 'Пуск' : 'Сброс';
+  play.setAttribute('aria-label', ready ? 'Запустить симуляцию' : 'Сбросить опыт, сохранив расстановку');
+  play.classList.toggle('resetting', !ready);
+  follow.classList.toggle('tracking', simulation.status === 'running' && game.camera.follow);
   hint.hidden = simulation.status !== 'ready';
-  follow.textContent = game.camera.follow ? '🎯 Слежение' : '🎯 Корабль';
   const display = missionDisplay(game);
-  missionPanel.hidden = !game.level && !display.terminal;
   element('mission-heading').textContent = display.heading;
   missionText.textContent = display.goal;
   element('conditions').textContent = display.conditions;
   element('mission-feedback').textContent = display.feedback;
   resultText.hidden = !display.result;
   resultText.textContent = display.result;
-  if (display.terminal && !wasTerminal) {
-    missionPanel.open = true;
-    element('mission-body').scrollTop = resultText.offsetTop;
-  }
-  wasTerminal = display.terminal;
+  ui?.update(display);
+  if (!game.level && !display.result) missionText.textContent = 'Свободная сцена. Меняйте окружение корабля, запускайте опыт и наблюдайте траекторию. Reset сохраняет расстановку.';
+  missionText.hidden = false;
   status.textContent = simulation.status === 'win' ? '✓ Победа' :
     simulation.status === 'lose' ? '× Поражение' :
-    simulation.status === 'error' ? '⚠ ошибка симуляции — нажмите Reset' :
-    simulation.status === 'collision' ? '💥 столкновение — нажмите Reset' :
+    simulation.status === 'error' ? '⚠ ошибка симуляции — нажмите Сброс' :
+    simulation.status === 'collision' ? '💥 столкновение — нажмите Сброс' :
     simulation.status === 'ready' ? 'Расстановка' : 'Полёт';
   earthTime.textContent = simulation.earthYears.toFixed(2);
   shipTime.textContent = simulation.shipYears.toFixed(2);
@@ -61,27 +63,37 @@ function updateUI() {
   }
 }
 const input = createInput(game, { canvas, tray: element('tray'), cards,
+  isOverTray: event => [element('tray-toggle'), ...(!element('tray').hidden ? [element('tray')] : [])].some(node => {
+    const r = node.getBoundingClientRect();
+    return event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom;
+  }),
   getViewport: () => renderer.viewport }, updateUI);
+ui = createInterface(game, element, input);
 let last = 0;
 play.addEventListener('click', () => {
   input.cancel();
-  if (startGame(game)) last = performance.now();
-  updateUI();
-});
-reset.addEventListener('click', () => {
-  input.cancel(); resetGame(game); updateUI();
-  element('mission-body').scrollTop = 0;
-});
-follow.addEventListener('click', () => {
-  game.camera.follow = !game.camera.follow;
-  if (game.camera.follow) {
-    game.camera.x = game.simulation.ship.x;
-    game.camera.y = game.simulation.ship.y;
+  if (game.simulation.status === 'ready') {
+    ui.closeTray(); ui.closeInfo(); ui.dismiss();
+    if (startGame(game)) last = performance.now();
+  } else {
+    resetGame(game);
+    ui.reset();
   }
   updateUI();
 });
+follow.addEventListener('click', () => {
+  input.cancel();
+  game.camera.follow = game.simulation.status === 'running';
+  game.camera.x = game.simulation.ship.x;
+  game.camera.y = game.simulation.ship.y;
+  updateUI();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') { input.cancel(); ui.closeInfo(); ui.closeTray(); ui.dismiss(); }
+});
 document.addEventListener('visibilitychange', () => {
   input.cancel();
+  ui.cancelGesture?.();
   last = performance.now();
   discardFrameTime(game.simulation);
 });
@@ -93,9 +105,10 @@ function frame(now) {
     updateUI();
   }
   renderer.draw(game, input.state);
+  ui.paint();
   requestAnimationFrame(frame);
 }
 renderer.resize();
-new ResizeObserver(() => { input.cancel(); renderer.resize(); }).observe(stage);
+new ResizeObserver(() => { input.cancel(); ui.cancelGesture?.(); renderer.resize(); }).observe(stage);
 updateUI();
 requestAnimationFrame(frame);
