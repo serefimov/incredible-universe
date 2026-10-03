@@ -192,6 +192,7 @@ with sync_playwright() as p:
     page.locator('#play').tap()
     page.wait_for_function('document.getElementById("status").textContent.includes("Поражение")')
     assert 'Столкновение' in page.locator('#result').inner_text()
+    page.set_viewport_size({'width': 390, 'height': 844})
     page.goto(url + '/dist/game/index.html?mission=example-earth-return')
     assert 'Земля' in page.locator('#earth-clock-label').inner_text()
     page.screenshot(path=str(OUTPUT / 'earth-mission.png'))
