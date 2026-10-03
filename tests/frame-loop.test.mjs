@@ -47,3 +47,54 @@ test('реальный кадровый цикл пропускает фон, о
   element('play').handlers.click(); frame(10);
   assert.equal(game.simulation.steps, 10);
 });
+
+test('уход в фон, Reset и Play отменяют реальные жесты до подтверждения позиции', async () => {
+  const { createInput } = await import('../src/input.js');
+  const { worldToScreen } = await import('../src/camera.js');
+  let game, input, callback, now = 0;
+  const nodes = new Map(), handlers = {};
+  const element = id => {
+    if (!nodes.has(id)) {
+      const rect = id === 'c' ? { left: 0, top: 48, right: 1000, bottom: 742 } : { left: 0, top: 742, right: 1000, bottom: 844 };
+      const captures = new Set();
+      nodes.set(id, { dataset: {}, handlers: {}, classList: { toggle() {} }, setAttribute() {},
+        getBoundingClientRect: () => rect, addEventListener(name, fn) { this.handlers[name] = fn; },
+        setPointerCapture: id => captures.add(id), hasPointerCapture: id => captures.has(id), releasePointerCapture: id => captures.delete(id) });
+    }
+    return nodes.get(id);
+  };
+  const cards = ['planet', 'giant', 'star'].map(type => { const card = element(type); card.dataset.type = type; return card; });
+  const document = { hidden: false, getElementById: element, querySelectorAll: () => cards,
+    addEventListener: (name, fn) => { handlers[name] = fn; } };
+  const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8').replace(/^import .*;$/gm, '');
+  const viewport = { width: 1000, height: 694 };
+  vm.runInNewContext(source, { document, performance: { now: () => now },
+    createGame: () => (game = createGame()), resetGame, startGame, advanceFrame, discardFrameTime, followShip,
+    createInput: (...args) => (input = createInput(...args)),
+    createRenderer: () => ({ viewport, resize() {}, draw() {} }), ResizeObserver: class { observe() {} },
+    requestAnimationFrame: fn => { callback = fn; } });
+  const send = (node, name, values = {}) => node.handlers[name]?.({ pointerType: 'touch', pointerId: 1, preventDefault() {}, ...values });
+  const at = (x, y) => { const s = worldToScreen(game.camera, viewport, x, y); return { clientX: s.x, clientY: s.y + 48 }; };
+  const newDrag = () => { send(cards[0], 'pointerdown', { clientX: 40, clientY: 790 }); send(cards[0], 'pointermove', at(-350, -140)); };
+  newDrag(); assert.ok(input.state.drag);
+  document.hidden = true; handlers.visibilitychange();
+  assert.equal(input.state.drag, null); assert.equal(cards[0].hasPointerCapture(1), false);
+  document.hidden = false; handlers.visibilitychange(); send(cards[0], 'pointerup', at(-350, -140));
+  assert.equal(game.configuration.placed.length, 0);
+  newDrag(); send(cards[0], 'pointerup', at(-350, -140));
+  const before = structuredClone(game.configuration);
+  send(element('c'), 'pointerdown', at(-350, -140)); send(element('c'), 'pointermove', at(-310, -120));
+  document.hidden = true; handlers.visibilitychange(); document.hidden = false; handlers.visibilitychange();
+  send(element('c'), 'pointerup', at(-310, -120));
+  assert.deepEqual(game.configuration, before);
+  for (const button of ['reset', 'play']) {
+    send(element('c'), 'pointerdown', at(-350, -140)); send(element('c'), 'pointermove', at(-310, -120));
+    element(button).handlers.click();
+    assert.equal(input.state.drag, null); assert.equal(input.state.pointers.size, 0);
+    assert.equal(element('c').hasPointerCapture(1), false);
+    send(element('c'), 'pointerup', at(-310, -120)); assert.deepEqual(game.configuration, before);
+  }
+  now = 10; callback(now);
+  assert.equal(game.simulation.status, 'running');
+  assert.equal(game.configuration.placed[0].x, -350);
+});

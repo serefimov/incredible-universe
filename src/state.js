@@ -6,7 +6,7 @@ import { loadLevel, initialEarthObserver } from './levels.js';
 export function createSimulation(scenario, configuration) {
   return {
     status: 'ready', time: 0, steps: 0, accumulator: 0, trail: [],
-    collisionId: null, collisionFraction: null, error: null,
+    collisionId: null, collisionFraction: null, error: null, result: null,
     clockVersion: CLOCK_CONTRACT.version, earthYears: 0, shipYears: 0,
     earthCorrection: 0, shipCorrection: 0,
     earthObserver: scenario.earthClock?.kind === 'body' ? initialEarthObserver(scenario) :
@@ -40,6 +40,10 @@ export function createGameFromLevel(input) {
   return { ...createGame(level.universe), level };
 }
 
+export function canEditConfiguration(game) {
+  return game.simulation.status === 'ready';
+}
+
 export function availableCount(game, type) {
   const spec = game.scenario.tray[type];
   if (!spec) return 0;
@@ -60,7 +64,7 @@ export function startGame(game) {
 
 export function validPlacement(game, type, x, y, ignoreId = null) {
   const spec = game.scenario.tray[type];
-  if (!spec || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+  if (!canEditConfiguration(game) || !spec || !Number.isFinite(x) || !Number.isFinite(y)) return false;
   const { ship, bodies } = game.simulation;
   const policy = game.level?.placement;
   if (policy && !policy.regions.some(region => region.kind === 'circle'
@@ -72,10 +76,10 @@ export function validPlacement(game, type, x, y, ignoreId = null) {
 }
 
 export function placeBody(game, type, x, y) {
-  if (game.simulation.status === 'running' || availableCount(game, type) === 0 ||
+  if (!canEditConfiguration(game) || availableCount(game, type) === 0 ||
       !validPlacement(game, type, x, y)) return false;
   const placement = { type, x, y };
-  if (game.level) {
+  if (game.level || (game.scenario.tray[type].count ?? 1) > 1) {
     let index = 1;
     const candidate = () => `user_${type}${index === 1 ? '' : `_${index}`}`;
     while (game.configuration.placed.some(p => p.id === candidate())) index++;
@@ -88,11 +92,8 @@ export function placeBody(game, type, x, y) {
 
 export function moveBody(game, type, x, y, id = null) {
   const placement = game.configuration.placed.find(p => p.type === type && (id === null || (p.id ?? `user_${p.type}`) === id));
-  if (game.simulation.status === 'running' || !placement) return false;
-  if (!validPlacement(game, type, x, y, placement.id ?? `user_${type}`)) {
-    resetGame(game);
-    return false;
-  }
+  if (!canEditConfiguration(game) || !placement) return false;
+  if (!validPlacement(game, type, x, y, placement.id ?? `user_${type}`)) return false;
   placement.x = x;
   placement.y = y;
   resetGame(game);
@@ -101,7 +102,7 @@ export function moveBody(game, type, x, y, id = null) {
 
 export function removeBody(game, type, id = null) {
   const index = game.configuration.placed.findIndex(p => p.type === type && (id === null || (p.id ?? `user_${p.type}`) === id));
-  if (game.simulation.status === 'running' || index === -1) return false;
+  if (!canEditConfiguration(game) || index === -1) return false;
   game.configuration.placed.splice(index, 1);
   resetGame(game);
   return true;

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { screenToWorld, worldToScreen } from './camera.js';
-import { placeBody, moveBody, removeBody, availableCount } from './state.js';
+import { placeBody, moveBody, removeBody, availableCount, canEditConfiguration } from './state.js';
 
 export function createInput(game, { canvas, tray, cards, getViewport }, changed) {
   // Gesture previews are UI state. They never write simulation positions.
@@ -45,7 +45,7 @@ export function createInput(game, { canvas, tray, cards, getViewport }, changed)
   for (const card of cards) {
     card.addEventListener('pointerdown', event => {
       const type = card.dataset.type;
-      if (running() || input.drag || availableCount(game, type) === 0) return;
+      if (!canEditConfiguration(game) || input.drag || availableCount(game, type) === 0) return;
       event.preventDefault();
       input.drag = { kind: 'new', type, ...world(event), pointerId: event.pointerId };
       capture(card, event.pointerId);
@@ -76,7 +76,7 @@ export function createInput(game, { canvas, tray, cards, getViewport }, changed)
     input.pointers.set(event.pointerId, p);
     if (input.pointers.size >= 2) { beginPinch(); return; }
     let hit = null, distance = 32;
-    for (const body of game.simulation.bodies.filter(body => body.user)) {
+    for (const body of game.simulation.bodies.filter(body => canEditConfiguration(game) && body.user)) {
       const screen = worldToScreen(game.camera, getViewport(), body.x, body.y);
       const candidate = Math.hypot(p.x - screen.x, p.y - screen.y);
       if (candidate < distance) { hit = body; distance = candidate; }

@@ -125,3 +125,37 @@ for (const pointerType of ['mouse', 'touch']) {
     assert.equal(startGame(h.game), true);
   });
 }
+
+for (const pointerType of ['mouse', 'touch']) {
+  test(`потеря захвата не подтверждает перенос и удаление (${pointerType})`, () => {
+    const h = harness(pointerType); h.place('planet', -350, -140);
+    const before = structuredClone({ simulation: h.game.simulation, configuration: h.game.configuration });
+    h.canvas.dispatch('pointerdown', h.worldEvent(-350, -140));
+    h.canvas.dispatch('pointermove', { clientX: 40, clientY: 790 });
+    h.canvas.dispatch('lostpointercapture', { pointerId: 1 });
+    h.canvas.dispatch('pointerup', { clientX: 40, clientY: 790 });
+    assert.equal(h.input.state.drag, null); assert.equal(h.input.state.pointers.size, 0);
+    assert.deepEqual({ simulation: h.game.simulation, configuration: h.game.configuration }, before);
+    const card = h.cards[2];
+    card.dispatch('pointerdown', { clientX: 40, clientY: 790 });
+    card.dispatch('pointermove', h.worldEvent(-300, -200));
+    card.dispatch('lostpointercapture', { pointerId: 1 });
+    card.dispatch('pointerup', h.worldEvent(-300, -200));
+    assert.deepEqual({ simulation: h.game.simulation, configuration: h.game.configuration }, before);
+  });
+  test(`после завершения ящик и тела не редактируются до Reset (${pointerType})`, () => {
+    const h = harness(pointerType); h.place('planet', -350, -140);
+    for (const status of ['collision', 'error', 'win', 'lose']) {
+      h.game.simulation.status = status;
+      const before = structuredClone({ simulation: h.game.simulation, configuration: h.game.configuration });
+      h.place('star', -300, -200);
+      h.canvas.dispatch('pointerdown', h.worldEvent(-350, -140));
+      assert.equal(h.input.state.drag, null);
+      h.canvas.dispatch('pointerup', { clientX: 40, clientY: 790 });
+      assert.deepEqual({ simulation: h.game.simulation, configuration: h.game.configuration }, before);
+      h.input.cancel(); resetGame(h.game);
+      h.move([-350, -140], [-310, -120]); h.move([-310, -120], [-350, -140]);
+      assert.ok(Math.abs(h.game.configuration.placed[0].x + 350) < 1e-10);
+    }
+  });
+}

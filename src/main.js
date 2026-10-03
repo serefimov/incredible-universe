@@ -19,7 +19,7 @@ function updateUI() {
   hint.hidden = simulation.status !== 'ready';
   follow.textContent = game.camera.follow ? '🎯 Слежение' : '🎯 Корабль';
   status.textContent = simulation.status === 'error' ? '⚠ ошибка симуляции — нажмите Reset' :
-    simulation.status === 'collision' ? '💥 столкновение' :
+    simulation.status === 'collision' ? '💥 столкновение — нажмите Reset' :
     simulation.status === 'ready' ? 'готово' :
       `v=${Math.hypot(simulation.ship.vx, simulation.ship.vy).toFixed(0)}`;
   earthTime.textContent = simulation.earthYears.toFixed(2);
@@ -29,7 +29,7 @@ function updateUI() {
     const used = !spec || game.configuration.placed.filter(p => p.type === card.dataset.type).length >= (spec.count ?? 1);
     card.hidden = !spec;
     card.classList.toggle('used', used);
-    card.setAttribute('aria-disabled', String(used || simulation.status === 'running'));
+    card.setAttribute('aria-disabled', String(used || simulation.status !== 'ready'));
   }
 }
 const input = createInput(game, { canvas, tray: element('tray'), cards,
@@ -52,6 +52,7 @@ follow.addEventListener('click', () => {
   updateUI();
 });
 document.addEventListener('visibilitychange', () => {
+  input.cancel();
   last = performance.now();
   discardFrameTime(game.simulation);
 });
