@@ -468,6 +468,9 @@ with sync_playwright() as p:
         touch('touchMove',1,at(-110,-120))
         touch('touchEnd',1)
         assert len(state()['configuration']['placed']) == 1
+        brief = page.locator('#mission-brief').bounding_box()
+        px,py = at(-110,-120)
+        assert not (brief['x'] <= px <= brief['x']+brief['width'] and brief['y'] <= py <= brief['y']+brief['height']), 'brief obscures the placed planet'
         placement = state()['configuration']
         page.screenshot(path=str(OUTPUT / f'first-level-placement-{width}x{height}.png'))
         page.locator('#play').tap()
