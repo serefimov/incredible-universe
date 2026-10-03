@@ -30,6 +30,20 @@ export function createRenderer(canvas, stage) {
       circle((i * 137.3) % W, (i * 73.7) % H, (i % 3) * 0.35 + 0.3, '#aeb9d3');
     }
     ctx.globalAlpha = 1;
+    if (game.level && simulation.status === 'ready') {
+      ctx.save(); ctx.setLineDash([4, 5]); ctx.strokeStyle = '#7badd599'; ctx.fillStyle = '#7badd512'; ctx.lineWidth = 1;
+      for (const region of game.level.placement.regions) {
+        if (region.kind === 'circle') {
+          const rs = screen(region.x, region.y);
+          circle(rs.x, rs.y, region.radius * camera.zoom, '#7badd512', '#7badd599');
+        } else {
+          const rs = screen(region.xMin, region.yMin);
+          const width = (region.xMax - region.xMin) * camera.zoom, height = (region.yMax - region.yMin) * camera.zoom;
+          ctx.fillRect(rs.x, rs.y, width, height); ctx.strokeRect(rs.x, rs.y, width, height);
+        }
+      }
+      ctx.restore();
+    }
     if (simulation.mission?.target) {
       const target = resolveTarget(simulation.mission.target, simulation), ts = screen(target.x, target.y);
       ctx.setLineDash([5, 5]);

@@ -20,6 +20,8 @@ const game = selectedLevel ? createGameFromLevel(selectedLevel) : createGame();
 const missionText = element('mission'), resultText = element('result');
 missionText.hidden = !game.level;
 let ui;
+element('training-link').hidden = Boolean(game.level);
+if (game.level?.purpose === 'campaign') element('title').textContent = game.level.title;
 const earthLabel = element('earth-clock-label');
 const earthClock = element('earth-clock');
 const observerBody = earthClockBody(game);
@@ -38,6 +40,8 @@ function updateUI() {
   follow.classList.toggle('tracking', simulation.status === 'running' && game.camera.follow);
   hint.hidden = simulation.status !== 'ready';
   const display = missionDisplay(game);
+  element('mission-brief').textContent = display.brief;
+  element('mission-brief').hidden = !ready || !display.brief;
   element('mission-heading').textContent = display.heading;
   missionText.textContent = display.goal;
   element('conditions').textContent = display.conditions;

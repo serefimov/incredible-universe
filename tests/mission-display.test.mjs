@@ -5,6 +5,20 @@ import { createGame, createGameFromLevel, startGame, resetGame } from '../src/st
 import { stepSimulation } from '../src/physics.js';
 import { missionDisplay } from '../src/mission-display.js';
 const examples = JSON.parse(readFileSync(new URL('../levels/mission-examples.json', import.meta.url)));
+const campaign = JSON.parse(readFileSync(new URL('../levels/campaign.json', import.meta.url)));
+
+test('краткая цель использует условия миссии и различает часы корабля и Земли', () => {
+  assert.equal(missionDisplay(createGame()).brief, '');
+  assert.equal(missionDisplay(createGameFromLevel(campaign[0])).brief,
+    'Выжить 500 лет по часам корабля без столкновения.');
+  const level = movingLevel();
+  level.mission.limits = {relativeSpeed: {min: 2, max: 10}, shipYears: {max: 100}, earthYears: {min: 300}};
+  const brief = missionDisplay(createGameFromLevel(level)).brief;
+  assert.match(brief, /радиус 1 мир. ед./);
+  assert.match(brief, /скорость относительно цели ≥ 2 и ≤ 10/);
+  assert.match(brief, /≤ 100 лет по часам корабля/);
+  assert.match(brief, /≥ 300 лет по часам Земли/);
+});
 
 function movingLevel() {
   const l = structuredClone(examples.at(-1));

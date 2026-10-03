@@ -419,6 +419,71 @@ with sync_playwright() as p:
     page.locator('#info').tap()
     assert 'Победа' in page.locator('#result').inner_text()
     print('PASS reduced motion keeps result after notification disappears', flush=True)
+    # The first authored campaign level uses the same real touch UI and engine.
+    page.goto(url + '/')
+    page.locator('#info').tap()
+    page.locator('#training-link').tap()
+    page.wait_for_url('**/?mission=training-1')
+    assert page.locator('#title').inner_text() == 'Первое вмешательство'
+    for width,height in [(390,844),(844,390)]:
+        page.set_viewport_size(dict(width=width,height=height))
+        page.goto(url + '/?mission=training-1')
+        page.wait_for_function('typeof inspectGame === "function"')
+        assert page.locator('#title').inner_text() == 'Первое вмешательство'
+        assert page.locator('.card:visible').count() == 1
+        assert page.locator('#earth-clock').is_hidden()
+        assert page.locator('#mission-brief').is_visible()
+        assert page.locator('#mission-brief').inner_text() == 'Выжить 500 лет по часам корабля без столкновения.'
+        brief = page.locator('#mission-brief').bounding_box()
+        assert brief['y'] + brief['height'] <= page.locator('#tray-sheet').bounding_box()['y']
+        page.locator('#info').tap()
+        assert '500' in page.locator('#conditions').inner_text()
+        page.locator('#info-close').tap()
+        page.screenshot(path=str(OUTPUT / f'first-level-start-{width}x{height}.png'))
+        page.locator('#play').tap()
+        assert page.locator('#mission-brief').is_hidden()
+        page.wait_for_function('inspectGame().simulation.status === "lose"')
+        assert state()['simulation']['collisionId'] == 'helios'
+        page.locator('#outcome-overlay').tap()
+        page.locator('#info').tap()
+        assert 'Гелиос' in page.locator('#result').inner_text()
+        page.locator('#play').tap()
+        page.locator('#info-close').tap()
+        assert page.locator('#tray').is_visible()
+        assert page.locator('#mission-brief').is_visible()
+        drag(centre('[data-type=planet]'),at(-110,-120))
+        assert len(state()['configuration']['placed']) == 1
+        placement = state()['configuration']
+        page.screenshot(path=str(OUTPUT / f'first-level-placement-{width}x{height}.png'))
+        page.locator('#play').tap()
+        page.wait_for_function('inspectGame().simulation.status === "win"')
+        assert abs(state()['simulation']['shipYears']-500) < 1e-8
+        page.locator('#outcome-overlay').tap()
+        page.locator('#info').tap()
+        assert 'Победа' in page.locator('#result').inner_text()
+        page.screenshot(path=str(OUTPUT / f'first-level-win-{width}x{height}.png'))
+        page.locator('#play').tap()
+        page.locator('#info-close').tap()
+        assert state()['configuration'] == placement
+        assert state()['simulation']['shipYears'] == 0
+        page.locator('#follow').tap()
+        drag(at(-110,-120),at(-105,-120))
+        assert abs(state()['configuration']['placed'][0]['x']+105) < 2
+        if width == 390:
+            page.locator('#play').tap()
+            page.wait_for_function('inspectGame().simulation.status === "win"')
+            page.locator('#outcome-overlay').tap()
+            page.locator('#play').tap()
+            page.locator('#follow').tap()
+        drag(at(-105,-120),centre('#tray-toggle'))
+        assert not state()['configuration']['placed']
+        print(f'PASS first campaign level: collision, one-planet Win, Reset, move, return {width}x{height}', flush=True)
+    page.goto(url + '/dist/game/index.html?mission=training-1')
+    assert page.locator('#title').inner_text() == 'Первое вмешательство'
+    assert page.locator('.card:visible').count() == 1
+    assert page.locator('#earth-clock').is_hidden()
+    print('PASS authored campaign embedded into standalone HTML', flush=True)
+    assert page.locator('#mission-brief').is_visible()
     assert not errors, errors
     browser.close()
 server.shutdown()

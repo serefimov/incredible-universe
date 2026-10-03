@@ -8,6 +8,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#05070d;color:#eef;fon
 #clocks output{color:#fff}
 #top,#clocks,#controls{flex-shrink:0}
 #stage{position:relative;flex:1;min-height:0}
+#mission-brief{position:absolute;top:8px;left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));width:fit-content;max-width:560px;margin-inline:auto;box-sizing:border-box;padding:8px 12px;border:1px solid #405173;border-radius:10px;background:#0b1020e8;color:#eef;font-size:13px;line-height:1.4;pointer-events:none}
 canvas{width:100%;height:100%;display:block;touch-action:none}
 #hint{font-size:12px;line-height:1.4;color:#c7d1e8;background:#14203a;padding:8px;border-radius:9px;margin-top:10px}
 button{font:inherit;min-width:44px;min-height:44px;touch-action:manipulation;border:1px solid #405173;background:#17213a;color:#fff;border-radius:14px;cursor:pointer}
@@ -36,6 +37,7 @@ button:focus-visible,#mission-body:focus-visible{outline:2px solid #81e1de;outli
 #mission-heading{font-size:15px;margin:0}
 #mission-body{position:relative;overflow-y:auto;overscroll-behavior:contain;padding:0 14px 14px;scrollbar-gutter:stable}
 #mission,#conditions,#result{white-space:pre-line;overflow-wrap:anywhere}
+#training-link{display:block;color:#81e1de;margin:8px 0 12px;padding:10px 0;min-height:24px}
 #mission{font-weight:600;margin-bottom:10px}#conditions{font-variant-numeric:tabular-nums;color:#d0e5f4}
 #mission-feedback{margin:10px 0;color:#d9c98e}
 #result{padding:10px;border:1px solid #526685;border-radius:10px;background:#14203a;font-variant-numeric:tabular-nums}

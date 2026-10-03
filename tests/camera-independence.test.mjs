@@ -30,7 +30,7 @@ function dom() {
         preventDefault() {}, ...values }); },
     };
   }
-  const nodes = Object.fromEntries(['c', 'stage', 'tray', 'play', 'play-symbol', 'play-label', 'reset', 'follow', 'status', 'hint', 'earth-time', 'ship-time', 'mission', 'result', 'earth-clock-label', 'earth-clock', 'mission-panel', 'mission-heading', 'mission-body', 'conditions', 'mission-feedback', 'follow-label', 'tray-toggle']
+  const nodes = Object.fromEntries(['c', 'stage', 'tray', 'title', 'training-link', 'mission-brief', 'play', 'play-symbol', 'play-label', 'reset', 'follow', 'status', 'hint', 'earth-time', 'ship-time', 'mission', 'result', 'earth-clock-label', 'earth-clock', 'mission-panel', 'mission-heading', 'mission-body', 'conditions', 'mission-feedback', 'follow-label', 'tray-toggle']
     .map(id => [id, element(id)]));
   const cards = ['planet', 'giant', 'star'].map(type => element('card', type));
   const document = { hidden: false, getElementById: id => nodes[id], querySelectorAll: () => cards,
