@@ -423,7 +423,8 @@ with sync_playwright() as p:
     page.goto(url + '/')
     page.locator('#info').tap()
     page.locator('#training-link').tap()
-    assert 'mission=training-1' in page.url
+    page.wait_for_url('**/?mission=training-1')
+    assert page.locator('#title').inner_text() == 'Первое вмешательство'
     for width,height in [(390,844),(844,390)]:
         page.set_viewport_size(dict(width=width,height=height))
         page.goto(url + '/?mission=training-1')
