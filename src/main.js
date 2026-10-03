@@ -5,8 +5,8 @@ import { followShip } from './camera.js';
 import { createRenderer } from './render.js';
 import { createInput } from './input.js';
 import { levelFromSearch } from './game-entry.js';
-import { describeMission } from './levels.js';
 import { earthClockBody } from './clock-display.js';
+import { missionDisplay } from './mission-display.js';
 
 const element = id => document.getElementById(id);
 const canvas = element('c'), stage = element('stage');
@@ -18,7 +18,8 @@ const selectedLevel = levelFromSearch(globalThis.location?.search ?? '');
 const game = selectedLevel ? createGameFromLevel(selectedLevel) : createGame();
 const missionText = element('mission'), resultText = element('result');
 missionText.hidden = !game.level;
-if (game.level) missionText.textContent = describeMission(game.level);
+const missionPanel = element('mission-panel');
+let wasTerminal = false;
 const earthLabel = element('earth-clock-label');
 const earthClock = element('earth-clock');
 const observerBody = earthClockBody(game);
@@ -31,14 +32,24 @@ function updateUI() {
   play.disabled = simulation.status !== 'ready';
   hint.hidden = simulation.status !== 'ready';
   follow.textContent = game.camera.follow ? '🎯 Слежение' : '🎯 Корабль';
-  resultText.hidden = !simulation.result;
-  if (simulation.result) resultText.textContent = `${simulation.result.outcome === 'win' ? '✓ Победа' : '× Поражение'}: ${simulation.result.message}`;
+  const display = missionDisplay(game);
+  missionPanel.hidden = !game.level && !display.terminal;
+  element('mission-heading').textContent = display.heading;
+  missionText.textContent = display.goal;
+  element('conditions').textContent = display.conditions;
+  element('mission-feedback').textContent = display.feedback;
+  resultText.hidden = !display.result;
+  resultText.textContent = display.result;
+  if (display.terminal && !wasTerminal) {
+    missionPanel.open = true;
+    element('mission-body').scrollTop = resultText.offsetTop;
+  }
+  wasTerminal = display.terminal;
   status.textContent = simulation.status === 'win' ? '✓ Победа' :
     simulation.status === 'lose' ? '× Поражение' :
     simulation.status === 'error' ? '⚠ ошибка симуляции — нажмите Reset' :
     simulation.status === 'collision' ? '💥 столкновение — нажмите Reset' :
-    simulation.status === 'ready' ? 'готово' :
-      `v=${Math.hypot(simulation.ship.vx, simulation.ship.vy).toFixed(0)}`;
+    simulation.status === 'ready' ? 'Расстановка' : 'Полёт';
   earthTime.textContent = simulation.earthYears.toFixed(2);
   shipTime.textContent = simulation.shipYears.toFixed(2);
   for (const card of cards) {
@@ -59,6 +70,7 @@ play.addEventListener('click', () => {
 });
 reset.addEventListener('click', () => {
   input.cancel(); resetGame(game); updateUI();
+  element('mission-body').scrollTop = 0;
 });
 follow.addEventListener('click', () => {
   game.camera.follow = !game.camera.follow;
@@ -87,4 +99,3 @@ renderer.resize();
 new ResizeObserver(() => { input.cancel(); renderer.resize(); }).observe(stage);
 updateUI();
 requestAnimationFrame(frame);
-
