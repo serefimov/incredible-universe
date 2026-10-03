@@ -33,6 +33,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 target=dict(centre=dict(kind='fixed', x=0, y=0), radius=3),
                 limits=dict(shipYears=dict(min=100), relativeSpeed=dict(max=9)))
             levels.append(fixture)
+            navigation = json.loads(json.dumps(fixture))
+            navigation.update(id='test-navigation', title='Проверка камеры в полёте', description='Длительный полёт для проверки ручной камеры.')
+            navigation['mission'] = dict(type='arrival', maxCoordinateYears=100000,
+                target=dict(centre=dict(kind='fixed', x=100000000, y=0), radius=3))
+            levels.append(navigation)
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
@@ -231,6 +236,34 @@ with sync_playwright() as p:
     page.locator('#follow').tap()
     page.locator('#follow').tap()
     assert state()['camera']['follow'] is True
+    page.screenshot(path=str(OUTPUT / 'flight-controls.png'))
+    page.locator('#play').tap()
+    assert state()['simulation']['status'] == 'ready'
+    assert state()['simulation']['shipYears'] == 0
+    assert page.locator('#play-label').inner_text() == 'Пуск'
+    assert state()['configuration'] == initial
+    page.locator('#play').tap()
+    page.wait_for_function('inspectGame().simulation.shipYears > 0')
+    page.locator('#play').tap()
+    # Bring the placed body back into view after the camera followed the ship.
+    page.mouse.move(195, 400)
+    page.mouse.wheel(0, 2500)
+    page.wait_for_timeout(100)
+    # Rotation/resize cancels a pending drag, without changing its start position.
+    touch('touchStart', 1, at(-350, -140))
+    touch('touchMove', 1, at(-310, -120))
+    assert state()['drag'] is not None
+    page.set_viewport_size({'width': 844, 'height': 390})
+    page.wait_for_timeout(100)
+    assert state()['drag'] is None and state()['pointers'] == 0
+    assert state()['configuration'] == initial
+    touch('touchEnd', 1)
+    print('PASS real browser touch cycle, pinch, cancellation, repeat and resize', flush=True)
+    page.goto(url + '/?mission=test-navigation')
+    page.wait_for_function('typeof inspectGame === "function"')
+    initial = state()['configuration']
+    page.locator('#play').tap()
+    page.wait_for_function('inspectGame().simulation.shipYears > 0')
     # Navigation mode: tap keeps tracking, drag takes over while flight continues.
     page.touchscreen.tap(100,220)
     assert state()['camera']['follow'] is True
@@ -266,25 +299,8 @@ with sync_playwright() as p:
     page.locator('#play').tap()
     assert state()['simulation']['status'] == 'ready'
     assert state()['simulation']['shipYears'] == 0
-    assert page.locator('#play-label').inner_text() == 'Пуск'
     assert state()['configuration'] == initial
-    page.locator('#play').tap()
-    page.wait_for_function('inspectGame().simulation.shipYears > 0')
-    page.locator('#play').tap()
-    # Bring the placed body back into view after the camera followed the ship.
-    page.mouse.move(195, 400)
-    page.mouse.wheel(0, 2500)
-    page.wait_for_timeout(100)
-    # Rotation/resize cancels a pending drag, without changing its start position.
-    touch('touchStart', 1, at(-350, -140))
-    touch('touchMove', 1, at(-310, -120))
-    assert state()['drag'] is not None
-    page.set_viewport_size({'width': 844, 'height': 390})
-    page.wait_for_timeout(100)
-    assert state()['drag'] is None and state()['pointers'] == 0
-    assert state()['configuration'] == initial
-    touch('touchEnd', 1)
-    print('PASS real browser touch cycle, pinch, cancellation, repeat and resize', flush=True)
+    print('PASS running navigation: manual pan/pinch/wheel, clocks continue, resume follow and Reset', flush=True)
     page.goto(url + '/dist/game/index.html')
     page.locator('#play').tap()
     page.wait_for_function('Number(document.getElementById("ship-time").textContent) > 0')
