@@ -1,0 +1,1962 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Incredible Universe — прототип</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#05070d;color:#eef;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+#wrap{height:100%;height:100dvh;display:flex;flex-direction:column}
+#top{height:48px;display:flex;align-items:center;gap:8px;padding:env(safe-area-inset-top) max(10px,env(safe-area-inset-right)) 0 max(10px,env(safe-area-inset-left));background:#0b1020;border-bottom:1px solid #24304a}
+#title{min-width:0;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button{min-width:44px;min-height:44px;touch-action:manipulation;border:1px solid #405173;background:#17213a;color:#fff;border-radius:10px;padding:8px 11px;font-weight:700}
+button:disabled{opacity:.4}
+#status{font-variant-numeric:tabular-nums;font-size:11px;color:#aeb9d3;white-space:normal;max-width:130px;line-height:1.15}
+#stage{position:relative;flex:1;min-height:0}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+#hint{position:absolute;left:10px;top:10px;max-width:min(460px,78vw);font-size:12px;line-height:1.35;color:#c7d1e8;background:#080c16d9;padding:7px 9px;border-radius:9px;pointer-events:none}
+#tray{height:102px;background:#0b1020;border-top:1px solid #24304a;display:flex;align-items:center;padding:0 10px;gap:8px;overflow-x:auto}
+.card{min-width:64px;height:68px;border:1px solid #405173;border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;user-select:none;touch-action:none;background:#121b30}
+.card .icon{font-size:28px;line-height:28px}.card small{font-size:9px;color:#b9c5df}.card.used{opacity:.35}
+#trayText{min-width:145px;font-size:10px;color:#9eabc7;line-height:1.25}.accent{color:#fff}
+#follow{font-size:11px}
+
+
+#clocks{display:flex;flex-wrap:wrap;gap:4px 16px;padding:5px 10px;background:#0b1020;color:#c7d1e8;font-size:12px;font-variant-numeric:tabular-nums;flex-shrink:0}
+#clocks output{color:#fff}
+#top,#tray{flex-shrink:0}
+
+.card[hidden]{display:none}
+
+/* Keep every action and tray card visible on a narrow phone, including safe areas. */
+@media(max-width:600px){
+  #top{height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto 44px 44px;gap:4px 8px;padding-bottom:4px}
+  #title{grid-column:1/-1;font-size:12px;padding-top:4px}
+  #status{max-width:none;min-width:0}
+  #tray{height:auto;min-height:102px;flex-wrap:wrap;justify-content:center;padding:8px max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));gap:6px 8px}
+  .card{flex:0 0 64px}
+  #trayText{flex:1 0 100%;min-width:0;text-align:center}
+  #trayText br{display:none}
+}
+@media(max-height:500px){
+  #hint{font-size:10px;padding:4px 6px}
+  #tray{min-height:0;padding-top:4px;padding-bottom:max(4px,env(safe-area-inset-bottom))}
+  .card{height:48px}
+  #trayText{font-size:9px}
+}
+
+#mission{flex-shrink:0;max-height:100px;overflow:auto;white-space:pre-line;font-size:11px;line-height:1.3;padding:6px 10px;background:#0b1020}
+#mission[hidden],#result[hidden]{display:none}
+#result{position:absolute;left:10px;right:10px;bottom:10px;z-index:1;padding:8px 10px;border-radius:9px;background:#080c16e8;font-size:13px;pointer-events:none}
+
+</style>
+</head>
+<body>
+<div id="wrap">
+ <div id="top">
+  <div id="title">The Incredible Universe</div>
+  <div id="status">готово</div>
+  <button id="follow">🎯 Корабль</button>
+  <button id="play" aria-label="Запустить симуляцию" title="Запустить симуляцию">▶</button>
+  <button id="reset" aria-label="Вернуться к начальным условиям" title="Вернуться к начальным условиям">↻</button>
+ </div>
+ <div id="clocks" role="group" aria-label="Время с начала полёта">
+  <span><span id="earth-clock-label">Опорные часы:</span> <output id="earth-time">0.00</output> лет</span>
+  <span>Корабль: <output id="ship-time">0.00</output> лет</span>
+ </div>
+ <div id="mission" hidden></div>
+ <div id="stage">
+  <div id="result" role="status" hidden></div>
+  <canvas id="c" aria-label="Карта Вселенной"></canvas>
+  <div id="hint"><b>До запуска:</b> тащи пустое место одним пальцем — двигай карту; колёсико/щипок — масштаб. Тела из ящика можно переставлять. <b>После ▶ камера следует за кораблём.</b></div>
+ </div>
+ <div id="tray">
+   <div class="card" data-type="planet"><div class="icon">🌍</div><small>ПЛАНЕТА</small></div>
+   <div class="card" data-type="giant"><div class="icon">🪐</div><small>ГИГАНТ</small></div>
+   <div class="card" data-type="star"><div class="icon">⭐</div><small>ЗВЕЗДА</small></div>
+   <div id="trayText"><span class="accent">v₀ = 0</span> у всех добавленных тел.<br> ↻ сохраняет расстановку.<br> Тело можно вернуть в ящик.</div>
+ </div>
+</div>
+<script>
+(() => {
+  // repository:src/scenario.js
+  function freezeTree(value) {
+    for (const child of Object.values(value)) {
+      if (child && typeof child === "object") freezeTree(child);
+    }
+    return Object.freeze(value);
+  }
+  var SPIKE_SCENARIO = freezeTree({
+    id: "spike-0.3",
+    // Reference Earth clock at the starting point; no new gravitating planet.
+    earthClock: { x: -700, y: 130, vx: 0, vy: 0 },
+    physics: { version: "fixed-euler-swept-v1", gravity: 7200, softening: 16, maxStep: 25e-4, timeScale: 2.5, maxFrame: 0.05 },
+    camera: { x: -250, y: 40, zoom: 0.72 },
+    bodies: [
+      { id: "sun", type: "fixedStar", x: 0, y: 0, vx: 0, vy: 0, m: 3e3, r: 30, fixed: true, label: "Солнце" },
+      { id: "p1", type: "fixedPlanet", x: 360, y: -210, vx: 0, vy: 34, m: 520, r: 16, fixed: false, label: "Аурелия" },
+      { id: "p2", type: "fixedPlanet", x: -520, y: 310, vx: 19, vy: -10, m: 700, r: 18, fixed: false, label: "Борея" },
+      { id: "star2", type: "fixedStar", x: 980, y: 180, vx: 0, vy: 0, m: 2200, r: 25, fixed: true, label: "Дальняя звезда" }
+    ],
+    ship: { id: "ship", x: -700, y: 130, vx: 58, vy: -5, m: 1e-3, r: 5, fixed: false },
+    tray: {
+      planet: { m: 420, r: 14, drawR: 13, label: "Планета" },
+      giant: { m: 1450, r: 20, drawR: 18, label: "Гигант" },
+      star: { m: 4e3, r: 27, drawR: 22, label: "Звезда" }
+    }
+  });
+
+  // repository:src/clocks.js
+  var CLOCK_CONTRACT = Object.freeze({
+    version: "potential-kinematic-v1",
+    lightSpeed: 1e3,
+    yearsPerUnit: 100
+  });
+  function potentialAt(point2, bodies, model) {
+    if (![point2.x, point2.y, model.gravity, model.softening].every(Number.isFinite) || model.gravity < 0 || model.softening <= 0) throw new RangeError("Некорректное поле");
+    let potential = 0;
+    for (const body2 of bodies) {
+      if (![body2.x, body2.y, body2.m].every(Number.isFinite) || body2.m < 0) {
+        throw new RangeError("Некорректный источник поля");
+      }
+      const distance = Math.hypot(point2.x - body2.x, point2.y - body2.y, model.softening);
+      if (!Number.isFinite(distance)) throw new RangeError("Переполнение расстояния");
+      potential -= model.gravity * body2.m / distance;
+    }
+    if (!Number.isFinite(potential)) throw new RangeError("Переполнение потенциала");
+    return potential;
+  }
+  function clockRate(vx, vy, potential = 0, clock = CLOCK_CONTRACT) {
+    if (![vx, vy, potential, clock.lightSpeed, clock.yearsPerUnit].every(Number.isFinite) || clock.lightSpeed <= 0 || clock.yearsPerUnit <= 0 || potential > 0) {
+      throw new RangeError("Некорректные параметры часов");
+    }
+    const beta = Math.hypot(vx, vy) / clock.lightSpeed;
+    if (beta >= 1) throw new RangeError("Скорость наблюдателя должна быть меньше c");
+    const depth = -potential / clock.lightSpeed / clock.lightSpeed;
+    const rate = Math.exp(-depth) * Math.sqrt((1 - beta) * (1 + beta));
+    if (!Number.isFinite(rate) || rate <= 0) throw new RangeError("Часы вышли за численный диапазон");
+    return rate;
+  }
+  function clockIncrement(vx, vy, duration, clock = CLOCK_CONTRACT, { shipPotential = 0, earthPotential = 0, earthVx = 0, earthVy = 0 } = {}) {
+    if (!Number.isFinite(duration) || duration < 0) throw new RangeError("Некорректный интервал");
+    const shipRate = clockRate(vx, vy, shipPotential, clock);
+    const earthRate = clockRate(earthVx, earthVy, earthPotential, clock);
+    const coordinateYears = clock.yearsPerUnit * duration;
+    const earth = coordinateYears * earthRate;
+    const ship = coordinateYears * shipRate;
+    if (![coordinateYears, earth, ship].every(Number.isFinite) || duration > 0 && (earth <= 0 || ship <= 0)) throw new RangeError("Переполнение или потеря точности часов");
+    return { earth, ship };
+  }
+  function sumYears(value, correction, increment) {
+    if (![value, correction, increment].every(Number.isFinite) || value < 0 || increment < 0) {
+      throw new RangeError("Некорректное состояние счётчика времени");
+    }
+    if (increment === 0) return { value, correction };
+    const delta = increment - correction;
+    const next = value + delta;
+    const nextCorrection = next - value - delta;
+    if (!Number.isFinite(next) || !Number.isFinite(nextCorrection) || next < value || increment > 0 && next === value) throw new RangeError("Потеря точности счётчика времени");
+    return { value: next, correction: nextCorrection };
+  }
+  var midpoint = (a, b) => ({ x: a.x / 2 + b.x / 2, y: a.y / 2 + b.y / 2 });
+  function calculateClocks(simulation, committed, model, duration) {
+    if (simulation.clockVersion !== CLOCK_CONTRACT.version) throw new RangeError("Неизвестная модель часов");
+    const observer = simulation.earthObserver;
+    if (!observer || !["x", "y", "vx", "vy"].every((key) => Number.isFinite(observer[key]))) {
+      throw new RangeError("Некорректный земной наблюдатель");
+    }
+    let earthObserver;
+    if (simulation.earthBinding) {
+      const binding = simulation.earthBinding;
+      const index = simulation.bodies.findIndex((body3) => body3.id === binding.bodyId);
+      if (index < 0 || !binding.offset || ![binding.offset.x, binding.offset.y].every(Number.isFinite)) {
+        throw new RangeError("Некорректная привязка земного наблюдателя");
+      }
+      const body2 = committed[index];
+      earthObserver = { x: body2.x + binding.offset.x, y: body2.y + binding.offset.y, vx: body2.vx, vy: body2.vy };
+    } else earthObserver = {
+      ...observer,
+      x: observer.x + observer.vx * duration,
+      y: observer.y + observer.vy * duration
+    };
+    if (![earthObserver.x, earthObserver.y, earthObserver.vx, earthObserver.vy].every(Number.isFinite)) {
+      throw new RangeError("Переполнение позиции земного наблюдателя");
+    }
+    const bodies = simulation.bodies.map((body2, i) => ({ ...body2, ...midpoint(body2, committed[i]) }));
+    const ship = committed.at(-1);
+    const increments = clockIncrement(ship.vx, ship.vy, duration, CLOCK_CONTRACT, {
+      shipPotential: potentialAt(midpoint(simulation.ship, ship), bodies, model),
+      earthPotential: potentialAt(midpoint(observer, earthObserver), bodies, model),
+      earthVx: earthObserver.vx,
+      earthVy: earthObserver.vy
+    });
+    const earth = sumYears(simulation.earthYears, simulation.earthCorrection, increments.earth);
+    const onBoard = sumYears(simulation.shipYears, simulation.shipCorrection, increments.ship);
+    return {
+      earthYears: earth.value,
+      shipYears: onBoard.value,
+      earthCorrection: earth.correction,
+      shipCorrection: onBoard.correction,
+      earthObserver
+    };
+  }
+
+  // repository:src/levels.js
+  var fail = (path, reason) => {
+    throw new TypeError(`${path}: ${reason}`);
+  };
+  var object = (value, path) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) fail(path, "ожидается объект");
+  };
+  var keys = (value, names, path) => {
+    object(value, path);
+    for (const key of Object.keys(value)) if (!names.includes(key)) fail(`${path}.${key}`, "неизвестное поле");
+  };
+  var number = (value, path, min = -Infinity, positive = false) => {
+    if (!Number.isFinite(value) || value < min || positive && value <= min) fail(path, "недопустимое конечное число");
+  };
+  var text = (value, path) => {
+    if (typeof value !== "string" || !value.trim()) fail(path, "ожидается непустой текст");
+  };
+  var id = (value, path) => {
+    if (typeof value !== "string" || !/^[a-z][a-z0-9-]*$/.test(value)) fail(path, "ожидается идентификатор");
+  };
+  var freeze = (value) => {
+    for (const child of Object.values(value)) if (child && typeof child === "object") freeze(child);
+    return Object.freeze(value);
+  };
+  var point = (value, path) => {
+    number(value.x, `${path}.x`);
+    number(value.y, `${path}.y`);
+  };
+  function interval(value, path) {
+    keys(value, ["min", "max"], path);
+    if (value.min === void 0 && value.max === void 0) fail(path, "пустой интервал");
+    if (value.min !== void 0) number(value.min, `${path}.min`, 0);
+    if (value.max !== void 0) number(value.max, `${path}.max`, 0);
+    if (value.min !== void 0 && value.max !== void 0 && value.min > value.max) fail(path, "min больше max");
+  }
+  function body(value, path, ship = false) {
+    keys(value, ["id", "type", "x", "y", "vx", "vy", "m", "r", "fixed", "label"], path);
+    id(value.id, `${path}.id`);
+    point(value, path);
+    for (const key of ["vx", "vy"]) number(value[key], `${path}.${key}`);
+    for (const key of ["m", "r"]) number(value[key], `${path}.${key}`, 0);
+    if (typeof value.fixed !== "boolean" || ship && value.fixed || value.fixed && (value.vx !== 0 || value.vy !== 0)) fail(path, "некорректное fixed");
+    if (!ship) {
+      text(value.label, `${path}.label`);
+      text(value.type, `${path}.type`);
+    }
+  }
+  function centre(value, path, bodies) {
+    if (value?.kind === "fixed") {
+      keys(value, ["kind", "x", "y"], path);
+      point(value, path);
+    } else if (value?.kind === "body") {
+      keys(value, ["kind", "bodyId", "offset"], path);
+      if (!bodies.some((body2) => body2.id === value.bodyId)) fail(`${path}.bodyId`, "нет исходного тела");
+      if (value.offset !== void 0) {
+        keys(value.offset, ["x", "y"], `${path}.offset`);
+        point(value.offset, `${path}.offset`);
+      }
+    } else fail(path, "центр должен быть fixed или body");
+  }
+  function loadLevel(input2) {
+    const level = typeof input2 === "string" ? JSON.parse(input2) : structuredClone(input2);
+    keys(level, ["schemaVersion", "id", "title", "description", "purpose", "universe", "placement", "mission", "tutorial"], "level");
+    if (level.schemaVersion !== 1) fail("level.schemaVersion", "неизвестная версия формата");
+    id(level.id, "level.id");
+    text(level.title, "level.title");
+    text(level.description, "level.description");
+    if (!["campaign", "contract-example"].includes(level.purpose)) fail("level.purpose", "ожидается campaign или contract-example");
+    const u = level.universe;
+    keys(u, ["id", "physics", "camera", "bodies", "ship", "tray", "earthClock"], "universe");
+    id(u.id, "universe.id");
+    keys(u.physics, ["version", "gravity", "softening", "maxStep", "timeScale", "maxFrame"], "physics");
+    if (u.physics.version !== "fixed-euler-swept-v1") fail("physics.version", "неизвестная модель");
+    number(u.physics.gravity, "physics.gravity", 0);
+    for (const key of ["softening", "maxStep", "timeScale", "maxFrame"]) number(u.physics[key], `physics.${key}`, 0, true);
+    keys(u.camera, ["x", "y", "zoom"], "camera");
+    point(u.camera, "camera");
+    number(u.camera.zoom, "camera.zoom", 0, true);
+    if (!Array.isArray(u.bodies)) fail("universe.bodies", "ожидается массив");
+    u.bodies.forEach((b, i) => body(b, `bodies[${i}]`));
+    body(u.ship, "ship", true);
+    const ids = [u.ship.id, ...u.bodies.map((b) => b.id)];
+    if (new Set(ids).size !== ids.length) fail("bodies.id", "повторяющиеся идентификаторы");
+    if (Math.hypot(u.ship.vx, u.ship.vy) === 0) fail("ship", "нужна ненулевая стартовая скорость");
+    keys(u.tray, ["planet", "giant", "star"], "tray");
+    for (const [type, spec] of Object.entries(u.tray)) {
+      keys(spec, ["m", "r", "drawR", "label", "count"], `tray.${type}`);
+      for (const key of ["m", "r"]) number(spec[key], `tray.${type}.${key}`, 0);
+      number(spec.drawR, `tray.${type}.drawR`, 0, true);
+      text(spec.label, `tray.${type}.label`);
+      if (!Number.isSafeInteger(spec.count) || spec.count < 0) fail(`tray.${type}.count`, "нужно целое количество >= 0");
+    }
+    const clock = u.earthClock;
+    if (clock?.kind === "inertial") {
+      keys(clock, ["kind", "x", "y", "vx", "vy"], "earthClock");
+      point(clock, "earthClock");
+      number(clock.vx, "earthClock.vx");
+      number(clock.vy, "earthClock.vy");
+    } else centre(clock, "earthClock", u.bodies);
+    if (clock.kind === "fixed") fail("earthClock", "используйте inertial с явной скоростью");
+    const observer = initialEarthObserver(u);
+    try {
+      clockRate(u.ship.vx, u.ship.vy, potentialAt(u.ship, u.bodies, u.physics));
+      clockRate(observer.vx, observer.vy, potentialAt(observer, u.bodies, u.physics));
+    } catch (error) {
+      fail("clock", error.message);
+    }
+    const placement = level.placement;
+    keys(placement, ["regions", "shipClearance", "bodyGap"], "placement");
+    number(placement.shipClearance, "placement.shipClearance", 0);
+    number(placement.bodyGap, "placement.bodyGap", 0);
+    if (!Array.isArray(placement.regions) || !placement.regions.length) fail("placement.regions", "нужна разрешённая область");
+    for (const [i, region] of placement.regions.entries()) {
+      const path = `placement.regions[${i}]`;
+      if (region.kind === "circle") {
+        keys(region, ["kind", "x", "y", "radius"], path);
+        point(region, path);
+        number(region.radius, `${path}.radius`, 0, true);
+      } else if (region.kind === "rect") {
+        keys(region, ["kind", "xMin", "xMax", "yMin", "yMax"], path);
+        for (const key of ["xMin", "xMax", "yMin", "yMax"]) number(region[key], `${path}.${key}`);
+        if (region.xMin >= region.xMax || region.yMin >= region.yMax) fail(path, "пустая или перевёрнутая область");
+      } else fail(path, "неизвестная форма");
+    }
+    const mission = level.mission;
+    keys(mission, ["type", "maxCoordinateYears", "survive", "target", "limits"], "mission");
+    number(mission.maxCoordinateYears, "mission.maxCoordinateYears", 0, true);
+    if (mission.type === "survival") {
+      keys(mission.survive, ["clock", "years"], "mission.survive");
+      if (!["coordinate", "earth", "ship"].includes(mission.survive.clock)) fail("mission.survive.clock", "неизвестные часы");
+      number(mission.survive.years, "mission.survive.years", 0, true);
+      if (mission.survive.years > mission.maxCoordinateYears) fail("mission.survive", "цель за горизонтом (собственные часы не быстрее координатных)");
+      if (mission.target !== void 0 || mission.limits !== void 0) fail("mission", "лишние условия выживания");
+    } else if (["arrival", "earth-return"].includes(mission.type)) {
+      if (mission.survive !== void 0) fail("mission.survive", "лишнее условие");
+      keys(mission.target, ["centre", "radius"], "mission.target");
+      centre(mission.target.centre, "mission.target.centre", u.bodies);
+      number(mission.target.radius, "mission.target.radius", 0, true);
+      keys(mission.limits, ["earthYears", "shipYears", "relativeSpeed"], "mission.limits");
+      for (const [key, value] of Object.entries(mission.limits)) interval(value, `mission.limits.${key}`);
+      for (const key of ["earthYears", "shipYears"]) {
+        if ((mission.limits[key]?.min ?? 0) > mission.maxCoordinateYears) fail(`mission.limits.${key}`, "нижняя граница за горизонтом");
+      }
+      if (mission.type === "earth-return") {
+        if (clock.kind !== "body" || mission.target.centre.kind !== "body" || mission.target.centre.bodyId !== clock.bodyId) fail("mission.target", "Земля должна быть целью и земным наблюдателем");
+        if (mission.limits.earthYears?.min === void 0 || mission.limits.shipYears?.max === void 0 || mission.limits.relativeSpeed?.max === void 0) fail("mission.limits", "возврат требует обоих времён и скорости");
+      }
+    } else fail("mission.type", "неизвестная миссия");
+    if (level.tutorial !== void 0) {
+      keys(level.tutorial, ["showFutureTrajectory", "showMotionVector", "steps"], "tutorial");
+      if (level.tutorial.showFutureTrajectory !== false || level.tutorial.showMotionVector !== true) fail("tutorial", "обучение показывает только короткий вектор движения");
+      if (!Array.isArray(level.tutorial.steps)) fail("tutorial.steps", "ожидается массив");
+      const stepIds = /* @__PURE__ */ new Set();
+      for (const step of level.tutorial.steps) {
+        keys(step, ["id", "text", "until", "availableCounts"], "tutorial.step");
+        id(step.id, "tutorial.step.id");
+        text(step.text, "tutorial.step.text");
+        if (stepIds.has(step.id)) fail("tutorial.steps", "повторяющийся шаг");
+        stepIds.add(step.id);
+        if (!["collision", "success"].includes(step.until)) fail("tutorial.step.until", "неизвестный переход");
+        keys(step.availableCounts, Object.keys(u.tray), "tutorial.step.availableCounts");
+        for (const [type, count] of Object.entries(step.availableCounts)) {
+          if (!Number.isSafeInteger(count) || count < 0 || count > u.tray[type].count) fail("tutorial.step.availableCounts", "количество вне ящика");
+        }
+      }
+    }
+    return freeze(level);
+  }
+  function initialEarthObserver(universe) {
+    const clock = universe.earthClock;
+    if (clock.kind !== "body") return { x: clock.x, y: clock.y, vx: clock.vx, vy: clock.vy };
+    const body2 = universe.bodies.find((body3) => body3.id === clock.bodyId);
+    const offset = clock.offset ?? { x: 0, y: 0 };
+    return { x: body2.x + offset.x, y: body2.y + offset.y, vx: body2.vx, vy: body2.vy };
+  }
+  function resolveTarget(target, simulation) {
+    const c = target.centre;
+    if (c.kind === "fixed") return { x: c.x, y: c.y, vx: 0, vy: 0, radius: target.radius };
+    const body2 = simulation.bodies.find((body3) => body3.id === c.bodyId);
+    if (!body2) throw new RangeError("Целевое тело отсутствует в симуляции");
+    return { x: body2.x + (c.offset?.x ?? 0), y: body2.y + (c.offset?.y ?? 0), vx: body2.vx, vy: body2.vy, radius: target.radius };
+  }
+  function describeMission(level) {
+    const mission = level.mission;
+    const clockNames = { coordinate: "координатного времени", earth: "земного времени", ship: "собственного времени корабля" };
+    const lines = [level.title, level.description];
+    if (mission.type === "survival") lines.push(`Избегайте столкновений в течение ${mission.survive.years} лет ${clockNames[mission.survive.clock]}.`);
+    else {
+      const centre2 = mission.target.centre;
+      const name = centre2.kind === "body" ? level.universe.bodies.find((b) => b.id === centre2.bodyId).label : `(${centre2.x}, ${centre2.y})`;
+      lines.push(`Достигните области вокруг ${name}, радиус ${mission.target.radius} мировых единиц; положение определяется центром корабля.`);
+      for (const [key, limit] of Object.entries(mission.limits)) {
+        const name2 = { earthYears: "Земное время (лет)", shipYears: "Собственное время корабля (лет)", relativeSpeed: "Скорость относительно цели (мировых единиц / единицу времени)" }[key];
+        const parts = [];
+        if (limit.min !== void 0) parts.push(`не менее ${limit.min}`);
+        if (limit.max !== void 0) parts.push(`не более ${limit.max}`);
+        lines.push(`${name2}: ${parts.join(", ")}.`);
+      }
+    }
+    lines.push(`Предел попытки: ${mission.maxCoordinateYears} координатных лет.`);
+    return lines.join("\n");
+  }
+
+  // repository:src/state.js
+  function createSimulation(scenario, configuration, mission = null) {
+    return {
+      ...mission ? { mission } : {},
+      status: "ready",
+      time: 0,
+      steps: 0,
+      accumulator: 0,
+      trail: [],
+      collisionId: null,
+      collisionFraction: null,
+      error: null,
+      result: null,
+      clockVersion: CLOCK_CONTRACT.version,
+      earthYears: 0,
+      shipYears: 0,
+      earthCorrection: 0,
+      shipCorrection: 0,
+      earthObserver: scenario.earthClock?.kind === "body" ? initialEarthObserver(scenario) : { ...scenario.earthClock ?? { x: scenario.ship.x, y: scenario.ship.y, vx: 0, vy: 0 } },
+      ...scenario.earthClock?.kind === "body" ? { earthBinding: {
+        bodyId: scenario.earthClock.bodyId,
+        offset: { ...scenario.earthClock.offset ?? { x: 0, y: 0 } }
+      } } : {},
+      ship: { ...scenario.ship },
+      bodies: [
+        ...scenario.bodies.map((body2) => ({ ...body2 })),
+        ...configuration.placed.map((placement) => ({
+          id: placement.id ?? `user_${placement.type}`,
+          type: placement.type,
+          x: placement.x,
+          y: placement.y,
+          vx: 0,
+          vy: 0,
+          m: scenario.tray[placement.type].m,
+          r: scenario.tray[placement.type].r,
+          label: scenario.tray[placement.type].label,
+          fixed: false,
+          user: true
+        }))
+      ]
+    };
+  }
+  function createGame(scenario = SPIKE_SCENARIO) {
+    const configuration = { placed: [] };
+    return {
+      scenario,
+      configuration,
+      simulation: createSimulation(scenario, configuration),
+      camera: { ...scenario.camera, follow: false }
+    };
+  }
+  function createGameFromLevel(input2) {
+    const level = loadLevel(input2);
+    const game2 = { ...createGame(level.universe), level };
+    game2.simulation.mission = level.mission;
+    return game2;
+  }
+  function canEditConfiguration(game2) {
+    return game2.simulation.status === "ready";
+  }
+  function availableCount(game2, type) {
+    const spec = game2.scenario.tray[type];
+    if (!spec) return 0;
+    return Math.max(0, (spec.count ?? 1) - game2.configuration.placed.filter((p) => p.type === type).length);
+  }
+  function resetGame(game2) {
+    game2.simulation = createSimulation(game2.scenario, game2.configuration, game2.level?.mission);
+    game2.camera.follow = false;
+  }
+  function startGame(game2) {
+    if (game2.simulation.status !== "ready") return false;
+    game2.simulation.status = "running";
+    game2.camera.follow = true;
+    return true;
+  }
+  function validPlacement(game2, type, x, y, ignoreId = null) {
+    const spec = game2.scenario.tray[type];
+    if (!canEditConfiguration(game2) || !spec || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+    const { ship, bodies } = game2.simulation;
+    const policy = game2.level?.placement;
+    if (policy && !policy.regions.some((region) => region.kind === "circle" ? Math.hypot(x - region.x, y - region.y) <= region.radius : x >= region.xMin && x <= region.xMax && y >= region.yMin && y <= region.yMax)) return false;
+    if (Math.hypot(x - ship.x, y - ship.y) < (policy?.shipClearance ?? 90)) return false;
+    return bodies.every((body2) => body2.id === ignoreId || Math.hypot(x - body2.x, y - body2.y) >= spec.r + body2.r + (policy?.bodyGap ?? 12));
+  }
+  function placeBody(game2, type, x, y) {
+    if (!canEditConfiguration(game2) || availableCount(game2, type) === 0 || !validPlacement(game2, type, x, y)) return false;
+    const placement = { type, x, y };
+    if (game2.level || (game2.scenario.tray[type].count ?? 1) > 1) {
+      let index = 1;
+      const candidate = () => `user_${type}${index === 1 ? "" : `_${index}`}`;
+      while (game2.configuration.placed.some((p) => p.id === candidate())) index++;
+      placement.id = candidate();
+    }
+    game2.configuration.placed.push(placement);
+    resetGame(game2);
+    return true;
+  }
+  function moveBody(game2, type, x, y, id2 = null) {
+    const placement = game2.configuration.placed.find((p) => p.type === type && (id2 === null || (p.id ?? `user_${p.type}`) === id2));
+    if (!canEditConfiguration(game2) || !placement) return false;
+    if (!validPlacement(game2, type, x, y, placement.id ?? `user_${type}`)) return false;
+    placement.x = x;
+    placement.y = y;
+    resetGame(game2);
+    return true;
+  }
+  function removeBody(game2, type, id2 = null) {
+    const index = game2.configuration.placed.findIndex((p) => p.type === type && (id2 === null || (p.id ?? `user_${p.type}`) === id2));
+    if (!canEditConfiguration(game2) || index === -1) return false;
+    game2.configuration.placed.splice(index, 1);
+    resetGame(game2);
+    return true;
+  }
+
+  // repository:src/mission-geometry.js
+  function targetInterval(ship, nextShip, target, nextTarget, radius) {
+    let x = ship.x - target.x, y = ship.y - target.y;
+    let dx = nextShip.x - nextTarget.x - x, dy = nextShip.y - nextTarget.y - y;
+    const scale = Math.max(Math.abs(x), Math.abs(y), Math.abs(dx), Math.abs(dy), radius);
+    if (!Number.isFinite(scale) || !Number.isFinite(radius) || radius <= 0) {
+      throw new RangeError("Некорректная геометрия цели");
+    }
+    x /= scale;
+    y /= scale;
+    dx /= scale;
+    dy /= scale;
+    radius /= scale;
+    const a = dx * dx + dy * dy, b = x * dx + y * dy;
+    const c = x * x + y * y - radius * radius;
+    if (a === 0) return c <= 0 ? [0, 1] : null;
+    const closest = -b / a;
+    const squaredDistance = (x + closest * dx) ** 2 + (y + closest * dy) ** 2;
+    if (squaredDistance > radius * radius) return null;
+    const root = Math.sqrt(Math.max(0, (radius * radius - squaredDistance) * a));
+    const q = -b - (b >= 0 ? root : -root);
+    const roots = q === 0 ? [closest, closest] : [q / a, c / q].sort((u, v) => u - v);
+    const enter = Math.max(0, roots[0]), exit = Math.min(1, roots[1]);
+    return enter <= exit ? [enter, exit] : null;
+  }
+  function inRange(value, range) {
+    return Number.isFinite(value) && (!range || value >= (range.min ?? -Infinity) && value <= (range.max ?? Infinity));
+  }
+
+  // repository:src/missions.js
+  function firstAtLeast(read, value, end) {
+    if (read(0) >= value) return 0;
+    if (read(end) < value) return null;
+    let lo = 0, hi = end;
+    for (let i = 0; i < 64; i++) {
+      const mid = lo / 2 + hi / 2;
+      if (mid === lo || mid === hi) break;
+      if (read(mid) >= value) hi = mid;
+      else lo = mid;
+    }
+    return hi;
+  }
+  function lastAtMost(read, value, end) {
+    if (read(0) > value) return null;
+    if (read(0) === value) return 0;
+    if (read(end) <= value) return end;
+    let lo = 0, hi = end;
+    for (let i = 0; i < 64; i++) {
+      const mid = lo / 2 + hi / 2;
+      if (mid === lo || mid === hi) break;
+      if (read(mid) <= value) lo = mid;
+      else hi = mid;
+    }
+    return lo;
+  }
+  function verifyClockSegment(simulation, next, model) {
+    const oldObserver = simulation.earthObserver;
+    let newObserver;
+    if (simulation.earthBinding) {
+      const i = simulation.bodies.findIndex((b) => b.id === simulation.earthBinding.bodyId);
+      if (i < 0) throw new RangeError("Земной наблюдатель потерял привязку");
+      const offset = simulation.earthBinding.offset;
+      newObserver = { x: next[i].x + offset.x, y: next[i].y + offset.y };
+    } else newObserver = {
+      x: oldObserver.x + oldObserver.vx * model.maxStep,
+      y: oldObserver.y + oldObserver.vy * model.maxStep
+    };
+    for (const [observer, nextObserver] of [[simulation.ship, next.at(-1)], [oldObserver, newObserver]]) {
+      let bound = 0;
+      for (let i = 0; i < simulation.bodies.length; i++) {
+        const body2 = simulation.bodies[i], n = next[i];
+        const x = observer.x - body2.x, y = observer.y - body2.y;
+        const dx = (nextObserver.x - observer.x - (n.x - body2.x)) / 2;
+        const dy = (nextObserver.y - observer.y - (n.y - body2.y)) / 2;
+        const length = Math.hypot(dx, dy);
+        if (length === 0 || model.gravity === 0 || body2.m === 0) continue;
+        const t = Math.max(0, Math.min(1, -(x * dx + y * dy) / length ** 2));
+        const closest = Math.hypot(x + t * dx, y + t * dy);
+        const radius = Math.max(closest, model.softening / Math.SQRT2);
+        const gradient = radius / Math.hypot(radius, model.softening) ** 3;
+        bound += model.gravity * body2.m / CLOCK_CONTRACT.lightSpeed ** 2 * length * gradient;
+      }
+      if (!Number.isFinite(bound) || bound >= 1) {
+        throw new RangeError("Не удалось однозначно локализовать события часов; уменьшите шаг сценария");
+      }
+    }
+  }
+  function missionEvent(simulation, next, model, end, clocksAt) {
+    const mission = simulation.mission;
+    if (!mission) return null;
+    const coordinateAt = (f) => (simulation.steps + f) * model.maxStep * CLOCK_CONTRACT.yearsPerUnit;
+    const read = (key) => (f) => f === 0 ? simulation[key] : clocksAt(f)[key];
+    const clock = (key) => key === "coordinate" ? coordinateAt : read(key === "earth" ? "earthYears" : "shipYears");
+    const horizon = firstAtLeast(coordinateAt, mission.maxCoordinateYears, end);
+    let upper = horizon ?? end, reason = "horizon";
+    const limits = mission.limits ?? {};
+    for (const key of ["earthYears", "shipYears"]) {
+      if (limits[key]?.max === void 0) continue;
+      const last2 = lastAtMost(read(key), limits[key].max, upper);
+      if (last2 === null) return { fraction: 0, outcome: "lose", reason: key === "shipYears" ? "ship-deadline" : "earth-deadline" };
+      if (last2 < upper) {
+        upper = last2;
+        reason = key === "shipYears" ? "ship-deadline" : "earth-deadline";
+      } else if (reason === "horizon" && read(key)(upper) === limits[key].max && (horizon === null || upper < horizon)) {
+        reason = key === "shipYears" ? "ship-deadline" : "earth-deadline";
+      }
+    }
+    let win = null;
+    if (mission.type === "survival") {
+      win = firstAtLeast(clock(mission.survive.clock), mission.survive.years, upper);
+    } else {
+      const nextSimulation = { ...simulation, bodies: next.slice(0, -1), ship: next.at(-1) };
+      const target = resolveTarget(mission.target, simulation), nextTarget = resolveTarget(mission.target, nextSimulation);
+      const speed = Math.hypot(next.at(-1).vx - nextTarget.vx, next.at(-1).vy - nextTarget.vy);
+      const interval2 = targetInterval(simulation.ship, next.at(-1), target, nextTarget, target.radius);
+      if (interval2 && inRange(speed, limits.relativeSpeed)) {
+        let lower = interval2[0], last2 = Math.min(interval2[1], upper);
+        for (const key of ["earthYears", "shipYears"]) {
+          if (limits[key]?.min === void 0) continue;
+          const first = firstAtLeast(read(key), limits[key].min, last2);
+          if (first === null) {
+            lower = Infinity;
+            break;
+          }
+          lower = Math.max(lower, first);
+        }
+        if (lower <= last2 && ["earthYears", "shipYears"].every((key) => inRange(read(key)(lower), limits[key]))) win = lower;
+      }
+    }
+    if (win !== null) return { fraction: win, outcome: "win", reason: mission.type === "survival" ? "survived" : "arrived" };
+    if (horizon !== null || reason !== "horizon" || upper < end) return { fraction: upper, outcome: "lose", reason };
+    return null;
+  }
+  var RESULT_REASONS = Object.freeze({
+    survived: "Условие выживания выполнено",
+    arrived: "Все условия прибытия выполнены",
+    collision: "Столкновение",
+    horizon: "Истёк предел попытки",
+    "ship-deadline": "Истёк срок по часам корабля",
+    "earth-deadline": "Истёк срок по земным часам"
+  });
+  function makeResult(event, simulation) {
+    return Object.freeze({
+      outcome: event.outcome,
+      reason: event.reason,
+      message: RESULT_REASONS[event.reason],
+      time: simulation.time,
+      earthYears: simulation.earthYears,
+      shipYears: simulation.shipYears,
+      ...simulation.collisionId ? { collisionId: simulation.collisionId } : {}
+    });
+  }
+
+  // repository:src/physics.js
+  function acceleration(object2, bodies, model) {
+    let ax = 0, ay = 0;
+    for (const body2 of bodies) {
+      if (body2 === object2) continue;
+      const dx = body2.x - object2.x, dy = body2.y - object2.y;
+      const denominator = Math.pow(dx * dx + dy * dy + model.softening * model.softening, 1.5);
+      ax += model.gravity * body2.m * dx / denominator;
+      ay += model.gravity * body2.m * dy / denominator;
+    }
+    return { ax, ay };
+  }
+  function finiteObject(object2) {
+    return ["x", "y", "vx", "vy", "m", "r"].every((key) => Number.isFinite(object2[key])) && object2.m >= 0 && object2.r >= 0;
+  }
+  function validModel(model) {
+    return ["gravity", "softening", "maxStep", "timeScale", "maxFrame"].every((key) => Number.isFinite(model[key])) && model.gravity >= 0 && model.softening > 0 && model.maxStep > 0 && model.timeScale > 0 && model.maxFrame > 0;
+  }
+  function fail2(simulation, reason) {
+    simulation.status = "error";
+    simulation.error = reason;
+    simulation.accumulator = 0;
+  }
+  function collisionFraction(ship, nextShip, body2, nextBody) {
+    let x = ship.x - body2.x, y = ship.y - body2.y;
+    let dx = nextShip.x - nextBody.x - x, dy = nextShip.y - nextBody.y - y;
+    let radius = ship.r + body2.r;
+    const scale = Math.max(Math.abs(x), Math.abs(y), Math.abs(dx), Math.abs(dy), radius);
+    if (!Number.isFinite(scale)) throw new Error("Переполнение геометрии столкновения");
+    if (scale === 0) return null;
+    x /= scale;
+    y /= scale;
+    dx /= scale;
+    dy /= scale;
+    radius /= scale;
+    const c = x * x + y * y - radius * radius;
+    if (c < 0) return 0;
+    const a = dx * dx + dy * dy;
+    if (a === 0) return null;
+    const b = x * dx + y * dy;
+    const closest = Math.max(0, Math.min(1, -b / a));
+    if (Math.hypot(x + closest * dx, y + closest * dy) >= radius) return null;
+    const discriminant = b * b - a * c;
+    const root = Math.sqrt(Math.max(0, discriminant));
+    const entry = c === 0 ? 0 : c / (-b + root);
+    return Math.max(0, Math.min(1, entry));
+  }
+  function stepSimulation(simulation, model, dt = model.maxStep) {
+    if (simulation.status !== "running") return;
+    if (!validModel(model) || dt !== model.maxStep || !Number.isSafeInteger(simulation.steps) || !Number.isFinite(simulation.time) || !Number.isFinite(simulation.accumulator)) {
+      fail2(simulation, "Некорректные параметры шага");
+      return;
+    }
+    const objects = [...simulation.bodies, simulation.ship];
+    if (!objects.every(finiteObject)) {
+      fail2(simulation, "Некорректное состояние тел");
+      return;
+    }
+    const next = objects.map((object2) => ({ ...object2 }));
+    for (let i = 0; i < objects.length; i++) {
+      if (objects[i].fixed) continue;
+      const a = acceleration(objects[i], simulation.bodies, model);
+      next[i].vx += a.ax * dt;
+      next[i].vy += a.ay * dt;
+      next[i].x += next[i].vx * dt;
+      next[i].y += next[i].vy * dt;
+    }
+    if (!next.every(finiteObject) || !Number.isSafeInteger(simulation.steps + 1)) {
+      fail2(simulation, "Численное переполнение");
+      return;
+    }
+    let fraction = 1, collisionId = null;
+    try {
+      for (let i = 0; i < simulation.bodies.length; i++) {
+        const hit = collisionFraction(simulation.ship, next.at(-1), objects[i], next[i]);
+        if (hit !== null && (collisionId === null || hit < fraction)) {
+          fraction = hit;
+          collisionId = objects[i].id;
+        }
+      }
+    } catch (error) {
+      fail2(simulation, error.message);
+      return;
+    }
+    const collisionEnd = fraction;
+    const segment = (f) => next.map((object2, i) => ({
+      ...object2,
+      x: f === 1 ? object2.x : objects[i].x * (1 - f) + object2.x * f,
+      y: f === 1 ? object2.y : objects[i].y * (1 - f) + object2.y * f
+    }));
+    const cache = /* @__PURE__ */ new Map();
+    const clocksAt = (f) => {
+      if (!cache.has(f)) cache.set(f, calculateClocks(simulation, segment(f), model, dt * f));
+      return cache.get(f);
+    };
+    let event = null, clocks;
+    try {
+      clocksAt(collisionEnd);
+      if (simulation.mission) {
+        const mission = simulation.mission;
+        if (mission.survive && mission.survive.clock !== "coordinate" || ["earthYears", "shipYears"].some((key) => mission.limits?.[key])) {
+          verifyClockSegment(simulation, next, model);
+        }
+        event = missionEvent(simulation, next, model, collisionEnd, clocksAt);
+      }
+      if (collisionId !== null && (!event || collisionEnd <= event.fraction + 1e-12)) {
+        event = simulation.mission ? { fraction: collisionEnd, outcome: "lose", reason: "collision" } : null;
+        fraction = collisionEnd;
+      } else {
+        collisionId = null;
+        fraction = event?.fraction ?? collisionEnd;
+      }
+      clocks = clocksAt(fraction);
+    } catch (error) {
+      fail2(simulation, error.message);
+      return;
+    }
+    const time = (simulation.steps + fraction) * dt;
+    if (!Number.isFinite(time)) {
+      fail2(simulation, "Переполнение времени");
+      return;
+    }
+    const committed = segment(fraction);
+    if (!committed.every(finiteObject)) {
+      fail2(simulation, "Переполнение позиции события");
+      return;
+    }
+    for (let i = 0; i < objects.length; i++) {
+      if (!objects[i].fixed) Object.assign(objects[i], committed[i]);
+    }
+    Object.assign(simulation, clocks);
+    simulation.steps++;
+    simulation.time = time;
+    if (collisionId !== null) {
+      simulation.status = "collision";
+      simulation.collisionId = collisionId;
+      simulation.collisionFraction = fraction;
+      simulation.accumulator = 0;
+    }
+    if (event) {
+      simulation.status = event.outcome;
+      simulation.accumulator = 0;
+      simulation.result = makeResult(event, simulation);
+    }
+    const { ship, trail } = simulation;
+    if (!trail.length || simulation.time - trail.at(-1).t > 0.12 || simulation.status !== "running") {
+      trail.push({ x: ship.x, y: ship.y, t: simulation.time });
+      if (trail.length > 1200) trail.shift();
+    }
+  }
+  function discardFrameTime(simulation) {
+    simulation.accumulator = 0;
+  }
+  function advanceFrame(simulation, model, realSeconds) {
+    if (simulation.status !== "running") return;
+    if (!validModel(model) || !Number.isFinite(realSeconds) || !Number.isFinite(simulation.accumulator)) {
+      fail2(simulation, "Некорректное время кадра");
+      return;
+    }
+    simulation.accumulator += Math.min(Math.max(0, realSeconds), model.maxFrame) * model.timeScale;
+    const ticks = Math.floor(simulation.accumulator / model.maxStep + 1e-10);
+    for (let i = 0; i < ticks && simulation.status === "running"; i++) {
+      simulation.accumulator = Math.max(0, simulation.accumulator - model.maxStep);
+      stepSimulation(simulation, model);
+    }
+  }
+
+  // repository:src/camera.js
+  function worldToScreen(camera, viewport, x, y) {
+    return {
+      x: (x - camera.x) * camera.zoom + viewport.width / 2,
+      y: (y - camera.y) * camera.zoom + viewport.height / 2
+    };
+  }
+  function screenToWorld(camera, viewport, x, y) {
+    return {
+      x: (x - viewport.width / 2) / camera.zoom + camera.x,
+      y: (y - viewport.height / 2) / camera.zoom + camera.y
+    };
+  }
+  function followShip(camera, ship) {
+    if (!camera.follow) return;
+    camera.x += (ship.x - camera.x) * 0.16;
+    camera.y += (ship.y - camera.y) * 0.16;
+  }
+
+  // repository:src/render.js
+  function createRenderer(canvas2, stage2) {
+    const ctx = canvas2.getContext("2d");
+    const viewport = { width: 0, height: 0 };
+    function resize() {
+      const rect = stage2.getBoundingClientRect();
+      viewport.width = rect.width;
+      viewport.height = rect.height;
+      const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
+      canvas2.width = Math.round(rect.width * dpr);
+      canvas2.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    function circle(x, y, r, fill, stroke) {
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = fill;
+      ctx.fill();
+      if (stroke) {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+    function draw(game2, input2) {
+      const { simulation, camera, scenario } = game2;
+      const { width: W, height: H } = viewport;
+      const screen = (x, y) => worldToScreen(camera, viewport, x, y);
+      ctx.clearRect(0, 0, W, H);
+      for (let i = 0; i < 110; i++) {
+        ctx.globalAlpha = 0.22 + i % 5 * 0.1;
+        circle(i * 137.3 % W, i * 73.7 % H, i % 3 * 0.35 + 0.3, "#aeb9d3");
+      }
+      ctx.globalAlpha = 1;
+      if (simulation.mission?.target) {
+        const target = resolveTarget(simulation.mission.target, simulation), ts = screen(target.x, target.y);
+        ctx.setLineDash([5, 5]);
+        circle(ts.x, ts.y, target.radius * camera.zoom, "#70e1de0c", "#70e1de");
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#70e1de";
+        ctx.font = "11px system-ui";
+        ctx.fillText("Область цели", ts.x + 8, ts.y - target.radius * camera.zoom - 5);
+      }
+      if (simulation.trail.length > 1) {
+        ctx.beginPath();
+        let s = screen(simulation.trail[0].x, simulation.trail[0].y);
+        ctx.moveTo(s.x, s.y);
+        for (const p of simulation.trail) {
+          s = screen(p.x, p.y);
+          ctx.lineTo(s.x, s.y);
+        }
+        ctx.strokeStyle = "#6d7899aa";
+        ctx.lineWidth = 1.3;
+        ctx.stroke();
+      }
+      for (const actual of simulation.bodies) {
+        const body2 = input2.drag?.kind === "existing" && input2.drag.id === actual.id ? { ...actual, x: input2.drag.x, y: input2.drag.y } : actual;
+        const s = screen(body2.x, body2.y);
+        if (s.x < -80 || s.x > W + 80 || s.y < -80 || s.y > H + 80) continue;
+        const r = Math.max(5, body2.r * Math.sqrt(camera.zoom));
+        if (body2.type === "fixedStar" || body2.type === "star") {
+          circle(s.x, s.y, r + 7, "#ffb52a22");
+          circle(s.x, s.y, r, body2.type === "star" ? "#fff1a8" : "#ffd45a");
+        } else if (body2.type === "giant") circle(s.x, s.y, r, "#c19a72", "#f0d0aa");
+        else if (body2.type === "planet") circle(s.x, s.y, r, "#7c8fd1", "#c7d1ff");
+        else circle(s.x, s.y, r, "#69a6a1", "#aee1dc");
+        ctx.fillStyle = "#aeb9d3";
+        ctx.font = "10px system-ui";
+        ctx.fillText(body2.label, s.x + r + 5, s.y - r - 2);
+        if (simulation.status === "ready" && body2.user) {
+          ctx.fillStyle = "#7f8da9";
+          ctx.fillText("v = 0", s.x + r + 5, s.y + 10);
+        }
+      }
+      if (input2.drag) {
+        const drag = input2.drag, s = screen(drag.x, drag.y);
+        const ok = validPlacement(game2, drag.type, drag.x, drag.y, drag.id ?? null);
+        circle(
+          s.x,
+          s.y,
+          scenario.tray[drag.type].drawR + 5,
+          ok ? "#7c8fd199" : "#a64c5d99",
+          ok ? "#d7deff" : "#ff899b"
+        );
+        ctx.fillStyle = ok ? "#d7deff" : "#ff899b";
+        ctx.font = "12px system-ui";
+        ctx.fillText(ok ? "✓" : "×", s.x + scenario.tray[drag.type].drawR + 9, s.y - 10);
+      }
+      const observer = simulation.earthObserver, os = screen(observer.x, observer.y);
+      if (os.x >= -20 && os.x <= W + 20 && os.y >= -20 && os.y <= H + 20) {
+        circle(os.x, os.y, 6, "#101c31", "#70e1de");
+        ctx.strokeStyle = "#70e1de";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(os.x, os.y - 4);
+        ctx.lineTo(os.x, os.y);
+        ctx.lineTo(os.x + 3, os.y);
+        ctx.stroke();
+        const body2 = simulation.earthBinding ? simulation.bodies.find((b) => b.id === simulation.earthBinding.bodyId) : null;
+        ctx.fillStyle = "#70e1de";
+        ctx.font = "10px system-ui";
+        ctx.fillText(body2 ? `Часы: ${body2.label}` : "Опорные часы", Math.min(os.x + 10, W - 105), os.y + 23);
+      }
+      const ship = simulation.ship, ss = screen(ship.x, ship.y);
+      ctx.save();
+      ctx.translate(ss.x, ss.y);
+      ctx.rotate(Math.atan2(ship.vy, ship.vx));
+      ctx.fillStyle = "#eef4ff";
+      ctx.beginPath();
+      ctx.moveTo(12, 0);
+      ctx.lineTo(-7, -5);
+      ctx.lineTo(-4, 0);
+      ctx.lineTo(-7, 5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      if (simulation.status !== "running" && !simulation.trail.length) {
+        const speed = Math.hypot(ship.vx, ship.vy), ux = ship.vx / speed, uy = ship.vy / speed;
+        ctx.setLineDash([5, 6]);
+        ctx.strokeStyle = "#d8e1ff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(ss.x + ux * 15, ss.y + uy * 15);
+        ctx.lineTo(ss.x + ux * 65, ss.y + uy * 65);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+    return { viewport, resize, draw };
+  }
+
+  // repository:src/input.js
+  function createInput(game2, { canvas: canvas2, tray, cards: cards2, getViewport }, changed) {
+    const input2 = { drag: null, pan: null, pinch: null, pointers: /* @__PURE__ */ new Map() };
+    const captures = /* @__PURE__ */ new Map();
+    const running = () => game2.simulation.status === "running";
+    const point2 = (event) => {
+      const rect = canvas2.getBoundingClientRect();
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    };
+    const world = (event) => {
+      const p = point2(event);
+      return screenToWorld(game2.camera, getViewport(), p.x, p.y);
+    };
+    const overTray = (event) => {
+      const r = tray.getBoundingClientRect();
+      return event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom;
+    };
+    function capture(element2, id2) {
+      element2.setPointerCapture?.(id2);
+      captures.set(id2, element2);
+    }
+    function release(id2) {
+      const element2 = captures.get(id2);
+      if (element2?.hasPointerCapture?.(id2)) element2.releasePointerCapture(id2);
+      captures.delete(id2);
+    }
+    function cancel() {
+      input2.drag = input2.pan = input2.pinch = null;
+      input2.pointers.clear();
+      for (const id2 of captures.keys()) release(id2);
+    }
+    function beginPinch() {
+      const [a, b] = [...input2.pointers.values()];
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      input2.drag = input2.pan = null;
+      input2.pinch = {
+        distance: Math.hypot(a.x - b.x, a.y - b.y),
+        zoom: game2.camera.zoom,
+        world: screenToWorld(game2.camera, getViewport(), mid.x, mid.y)
+      };
+    }
+    function move(event) {
+      if (running() || !input2.pointers.has(event.pointerId)) return;
+      const p = point2(event);
+      input2.pointers.set(event.pointerId, p);
+      if (input2.pinch) {
+        const [a, b] = [...input2.pointers.values()];
+        const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+        const pinch = input2.pinch;
+        if (pinch.distance === 0) {
+          beginPinch();
+          return;
+        }
+        game2.camera.zoom = Math.max(0.22, Math.min(
+          2.8,
+          pinch.zoom * Math.hypot(a.x - b.x, a.y - b.y) / pinch.distance
+        ));
+        const viewport = getViewport();
+        game2.camera.x = pinch.world.x - (mid.x - viewport.width / 2) / game2.camera.zoom;
+        game2.camera.y = pinch.world.y - (mid.y - viewport.height / 2) / game2.camera.zoom;
+      } else if (input2.drag?.pointerId === event.pointerId) {
+        const position = world(event), offset = input2.drag.offset ?? { x: 0, y: 0 };
+        Object.assign(input2.drag, { x: position.x + offset.x, y: position.y + offset.y });
+      } else if (input2.pan?.pointerId === event.pointerId) {
+        game2.camera.x -= (p.x - input2.pan.last.x) / game2.camera.zoom;
+        game2.camera.y -= (p.y - input2.pan.last.y) / game2.camera.zoom;
+        input2.pan.last = p;
+      }
+    }
+    function up(event) {
+      if (!input2.pointers.has(event.pointerId)) return;
+      const drag = input2.drag;
+      if (drag?.pointerId === event.pointerId) {
+        const position = world(event), offset = drag.offset ?? { x: 0, y: 0 };
+        cancel();
+        if (drag.kind === "new") {
+          if (!overTray(event)) placeBody(game2, drag.type, position.x, position.y);
+        } else if (overTray(event)) removeBody(game2, drag.type, drag.id);
+        else moveBody(game2, drag.type, position.x + offset.x, position.y + offset.y, drag.id);
+        changed();
+        return;
+      }
+      input2.pointers.delete(event.pointerId);
+      input2.pinch = null;
+      const remaining = [...input2.pointers.entries()][0];
+      input2.pan = remaining ? { pointerId: remaining[0], last: remaining[1] } : null;
+      release(event.pointerId);
+    }
+    function listen(element2) {
+      element2.addEventListener("pointermove", move);
+      element2.addEventListener("pointerup", up);
+      element2.addEventListener("pointercancel", (event) => {
+        if (input2.pointers.has(event.pointerId)) cancel();
+      });
+      element2.addEventListener("lostpointercapture", (event) => {
+        if (input2.pointers.has(event.pointerId)) cancel();
+      });
+    }
+    for (const card of cards2) {
+      card.addEventListener("pointerdown", (event) => {
+        const type = card.dataset.type;
+        if (!canEditConfiguration(game2) || input2.pointers.size || availableCount(game2, type) === 0) return;
+        event.preventDefault();
+        input2.pointers.set(event.pointerId, point2(event));
+        input2.drag = { kind: "new", type, ...world(event), pointerId: event.pointerId };
+        capture(card, event.pointerId);
+      });
+      listen(card);
+    }
+    canvas2.addEventListener("pointerdown", (event) => {
+      if (running() || input2.pointers.size >= 2 || input2.pointers.has(event.pointerId)) return;
+      event.preventDefault();
+      capture(canvas2, event.pointerId);
+      const p = point2(event);
+      input2.pointers.set(event.pointerId, p);
+      if (input2.pointers.size === 2) {
+        beginPinch();
+        return;
+      }
+      let hit = null, distance = 32;
+      for (const body2 of game2.simulation.bodies.filter((body3) => canEditConfiguration(game2) && body3.user)) {
+        const screen = worldToScreen(game2.camera, getViewport(), body2.x, body2.y);
+        const candidate = Math.hypot(p.x - screen.x, p.y - screen.y);
+        if (candidate < distance) {
+          hit = body2;
+          distance = candidate;
+        }
+      }
+      if (hit) {
+        const position = world(event);
+        input2.drag = {
+          kind: "existing",
+          type: hit.type,
+          id: hit.id,
+          x: hit.x,
+          y: hit.y,
+          offset: { x: hit.x - position.x, y: hit.y - position.y },
+          pointerId: event.pointerId
+        };
+      } else input2.pan = { pointerId: event.pointerId, last: p };
+    });
+    listen(canvas2);
+    canvas2.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      if (running()) return;
+      const p = point2(event), viewport = getViewport();
+      const before = screenToWorld(game2.camera, viewport, p.x, p.y);
+      game2.camera.zoom = Math.max(0.22, Math.min(2.8, game2.camera.zoom * Math.exp(-event.deltaY * 1e-3)));
+      game2.camera.x = before.x - (p.x - viewport.width / 2) / game2.camera.zoom;
+      game2.camera.y = before.y - (p.y - viewport.height / 2) / game2.camera.zoom;
+    }, { passive: false });
+    return { state: input2, cancel };
+  }
+
+  // repository:levels/mission-examples.json
+  var mission_examples_default = [
+    {
+      schemaVersion: 1,
+      id: "example-survival",
+      title: "Выжить заданное время",
+      description: "Пример формата #8. Числа для проверки контракта, не сбалансированный уровень кампании.",
+      purpose: "contract-example",
+      universe: {
+        id: "example-world",
+        earthClock: {
+          x: -700,
+          y: 130,
+          vx: 0,
+          vy: 0,
+          kind: "inertial"
+        },
+        physics: {
+          version: "fixed-euler-swept-v1",
+          gravity: 7200,
+          softening: 16,
+          maxStep: 25e-4,
+          timeScale: 2.5,
+          maxFrame: 0.05
+        },
+        camera: {
+          x: -250,
+          y: 40,
+          zoom: 0.72
+        },
+        bodies: [
+          {
+            id: "sun",
+            type: "fixedStar",
+            x: 0,
+            y: 0,
+            vx: 0,
+            vy: 0,
+            m: 3e3,
+            r: 30,
+            fixed: true,
+            label: "Солнце"
+          },
+          {
+            id: "p1",
+            type: "fixedPlanet",
+            x: 360,
+            y: -210,
+            vx: 0,
+            vy: 34,
+            m: 520,
+            r: 16,
+            fixed: false,
+            label: "Аурелия"
+          },
+          {
+            id: "p2",
+            type: "fixedPlanet",
+            x: -520,
+            y: 310,
+            vx: 19,
+            vy: -10,
+            m: 700,
+            r: 18,
+            fixed: false,
+            label: "Борея"
+          },
+          {
+            id: "star2",
+            type: "fixedStar",
+            x: 980,
+            y: 180,
+            vx: 0,
+            vy: 0,
+            m: 2200,
+            r: 25,
+            fixed: true,
+            label: "Дальняя звезда"
+          }
+        ],
+        ship: {
+          id: "ship",
+          x: -700,
+          y: 130,
+          vx: 58,
+          vy: -5,
+          m: 1e-3,
+          r: 5,
+          fixed: false
+        },
+        tray: {
+          planet: {
+            m: 420,
+            r: 14,
+            drawR: 13,
+            label: "Планета",
+            count: 2
+          },
+          giant: {
+            m: 1450,
+            r: 20,
+            drawR: 18,
+            label: "Гигант",
+            count: 1
+          },
+          star: {
+            m: 4e3,
+            r: 27,
+            drawR: 22,
+            label: "Звезда",
+            count: 1
+          }
+        }
+      },
+      placement: {
+        regions: [
+          {
+            kind: "rect",
+            xMin: -1e3,
+            xMax: 1500,
+            yMin: -800,
+            yMax: 800
+          }
+        ],
+        shipClearance: 90,
+        bodyGap: 12
+      },
+      mission: {
+        type: "survival",
+        maxCoordinateYears: 500,
+        survive: {
+          clock: "ship",
+          years: 50
+        }
+      }
+    },
+    {
+      schemaVersion: 1,
+      id: "example-region",
+      title: "Пройти через целевую область",
+      description: "Пример формата #8. Числа для проверки контракта, не сбалансированный уровень кампании.",
+      purpose: "contract-example",
+      universe: {
+        id: "example-world",
+        earthClock: {
+          x: -700,
+          y: 130,
+          vx: 0,
+          vy: 0,
+          kind: "inertial"
+        },
+        physics: {
+          version: "fixed-euler-swept-v1",
+          gravity: 7200,
+          softening: 16,
+          maxStep: 25e-4,
+          timeScale: 2.5,
+          maxFrame: 0.05
+        },
+        camera: {
+          x: -250,
+          y: 40,
+          zoom: 0.72
+        },
+        bodies: [
+          {
+            id: "sun",
+            type: "fixedStar",
+            x: 0,
+            y: 0,
+            vx: 0,
+            vy: 0,
+            m: 3e3,
+            r: 30,
+            fixed: true,
+            label: "Солнце"
+          },
+          {
+            id: "p1",
+            type: "fixedPlanet",
+            x: 360,
+            y: -210,
+            vx: 0,
+            vy: 34,
+            m: 520,
+            r: 16,
+            fixed: false,
+            label: "Аурелия"
+          },
+          {
+            id: "p2",
+            type: "fixedPlanet",
+            x: -520,
+            y: 310,
+            vx: 19,
+            vy: -10,
+            m: 700,
+            r: 18,
+            fixed: false,
+            label: "Борея"
+          },
+          {
+            id: "star2",
+            type: "fixedStar",
+            x: 980,
+            y: 180,
+            vx: 0,
+            vy: 0,
+            m: 2200,
+            r: 25,
+            fixed: true,
+            label: "Дальняя звезда"
+          }
+        ],
+        ship: {
+          id: "ship",
+          x: -700,
+          y: 130,
+          vx: 58,
+          vy: -5,
+          m: 1e-3,
+          r: 5,
+          fixed: false
+        },
+        tray: {
+          planet: {
+            m: 420,
+            r: 14,
+            drawR: 13,
+            label: "Планета",
+            count: 2
+          },
+          giant: {
+            m: 1450,
+            r: 20,
+            drawR: 18,
+            label: "Гигант",
+            count: 1
+          },
+          star: {
+            m: 4e3,
+            r: 27,
+            drawR: 22,
+            label: "Звезда",
+            count: 1
+          }
+        }
+      },
+      placement: {
+        regions: [
+          {
+            kind: "rect",
+            xMin: -1e3,
+            xMax: 1500,
+            yMin: -800,
+            yMax: 800
+          }
+        ],
+        shipClearance: 90,
+        bodyGap: 12
+      },
+      mission: {
+        type: "arrival",
+        maxCoordinateYears: 500,
+        target: {
+          centre: {
+            kind: "fixed",
+            x: 500,
+            y: 0
+          },
+          radius: 100
+        },
+        limits: {}
+      }
+    },
+    {
+      schemaVersion: 1,
+      id: "example-proper-time",
+      title: "Достичь области за собственное время",
+      description: "Пример формата #8. Числа для проверки контракта, не сбалансированный уровень кампании.",
+      purpose: "contract-example",
+      universe: {
+        id: "example-world",
+        earthClock: {
+          x: -700,
+          y: 130,
+          vx: 0,
+          vy: 0,
+          kind: "inertial"
+        },
+        physics: {
+          version: "fixed-euler-swept-v1",
+          gravity: 7200,
+          softening: 16,
+          maxStep: 25e-4,
+          timeScale: 2.5,
+          maxFrame: 0.05
+        },
+        camera: {
+          x: -250,
+          y: 40,
+          zoom: 0.72
+        },
+        bodies: [
+          {
+            id: "sun",
+            type: "fixedStar",
+            x: 0,
+            y: 0,
+            vx: 0,
+            vy: 0,
+            m: 3e3,
+            r: 30,
+            fixed: true,
+            label: "Солнце"
+          },
+          {
+            id: "p1",
+            type: "fixedPlanet",
+            x: 360,
+            y: -210,
+            vx: 0,
+            vy: 34,
+            m: 520,
+            r: 16,
+            fixed: false,
+            label: "Аурелия"
+          },
+          {
+            id: "p2",
+            type: "fixedPlanet",
+            x: -520,
+            y: 310,
+            vx: 19,
+            vy: -10,
+            m: 700,
+            r: 18,
+            fixed: false,
+            label: "Борея"
+          },
+          {
+            id: "star2",
+            type: "fixedStar",
+            x: 980,
+            y: 180,
+            vx: 0,
+            vy: 0,
+            m: 2200,
+            r: 25,
+            fixed: true,
+            label: "Дальняя звезда"
+          }
+        ],
+        ship: {
+          id: "ship",
+          x: -700,
+          y: 130,
+          vx: 58,
+          vy: -5,
+          m: 1e-3,
+          r: 5,
+          fixed: false
+        },
+        tray: {
+          planet: {
+            m: 420,
+            r: 14,
+            drawR: 13,
+            label: "Планета",
+            count: 2
+          },
+          giant: {
+            m: 1450,
+            r: 20,
+            drawR: 18,
+            label: "Гигант",
+            count: 1
+          },
+          star: {
+            m: 4e3,
+            r: 27,
+            drawR: 22,
+            label: "Звезда",
+            count: 1
+          }
+        }
+      },
+      placement: {
+        regions: [
+          {
+            kind: "rect",
+            xMin: -1e3,
+            xMax: 1500,
+            yMin: -800,
+            yMax: 800
+          }
+        ],
+        shipClearance: 90,
+        bodyGap: 12
+      },
+      mission: {
+        type: "arrival",
+        maxCoordinateYears: 500,
+        target: {
+          centre: {
+            kind: "fixed",
+            x: 500,
+            y: 0
+          },
+          radius: 100
+        },
+        limits: {
+          shipYears: {
+            max: 100
+          }
+        }
+      }
+    },
+    {
+      schemaVersion: 1,
+      id: "example-speed-time",
+      title: "Прибыть с допустимой скоростью и временем",
+      description: "Пример формата #8. Числа для проверки контракта, не сбалансированный уровень кампании.",
+      purpose: "contract-example",
+      universe: {
+        id: "example-world",
+        earthClock: {
+          x: -700,
+          y: 130,
+          vx: 0,
+          vy: 0,
+          kind: "inertial"
+        },
+        physics: {
+          version: "fixed-euler-swept-v1",
+          gravity: 7200,
+          softening: 16,
+          maxStep: 25e-4,
+          timeScale: 2.5,
+          maxFrame: 0.05
+        },
+        camera: {
+          x: -250,
+          y: 40,
+          zoom: 0.72
+        },
+        bodies: [
+          {
+            id: "sun",
+            type: "fixedStar",
+            x: 0,
+            y: 0,
+            vx: 0,
+            vy: 0,
+            m: 3e3,
+            r: 30,
+            fixed: true,
+            label: "Солнце"
+          },
+          {
+            id: "p1",
+            type: "fixedPlanet",
+            x: 360,
+            y: -210,
+            vx: 0,
+            vy: 34,
+            m: 520,
+            r: 16,
+            fixed: false,
+            label: "Аурелия"
+          },
+          {
+            id: "p2",
+            type: "fixedPlanet",
+            x: -520,
+            y: 310,
+            vx: 19,
+            vy: -10,
+            m: 700,
+            r: 18,
+            fixed: false,
+            label: "Борея"
+          },
+          {
+            id: "star2",
+            type: "fixedStar",
+            x: 980,
+            y: 180,
+            vx: 0,
+            vy: 0,
+            m: 2200,
+            r: 25,
+            fixed: true,
+            label: "Дальняя звезда"
+          }
+        ],
+        ship: {
+          id: "ship",
+          x: -700,
+          y: 130,
+          vx: 58,
+          vy: -5,
+          m: 1e-3,
+          r: 5,
+          fixed: false
+        },
+        tray: {
+          planet: {
+            m: 420,
+            r: 14,
+            drawR: 13,
+            label: "Планета",
+            count: 2
+          },
+          giant: {
+            m: 1450,
+            r: 20,
+            drawR: 18,
+            label: "Гигант",
+            count: 1
+          },
+          star: {
+            m: 4e3,
+            r: 27,
+            drawR: 22,
+            label: "Звезда",
+            count: 1
+          }
+        }
+      },
+      placement: {
+        regions: [
+          {
+            kind: "rect",
+            xMin: -1e3,
+            xMax: 1500,
+            yMin: -800,
+            yMax: 800
+          }
+        ],
+        shipClearance: 90,
+        bodyGap: 12
+      },
+      mission: {
+        type: "arrival",
+        maxCoordinateYears: 500,
+        target: {
+          centre: {
+            kind: "body",
+            bodyId: "p1"
+          },
+          radius: 50
+        },
+        limits: {
+          relativeSpeed: {
+            min: 0,
+            max: 100
+          },
+          shipYears: {
+            max: 100
+          }
+        }
+      }
+    },
+    {
+      schemaVersion: 1,
+      id: "example-earth-return",
+      title: "Вернуться к Земле с двумя временами",
+      description: "Пример формата #8. Числа для проверки контракта, не сбалансированный уровень кампании.",
+      purpose: "contract-example",
+      universe: {
+        id: "example-world",
+        earthClock: {
+          kind: "body",
+          bodyId: "p1",
+          offset: {
+            x: 16,
+            y: 0
+          }
+        },
+        physics: {
+          version: "fixed-euler-swept-v1",
+          gravity: 7200,
+          softening: 16,
+          maxStep: 25e-4,
+          timeScale: 2.5,
+          maxFrame: 0.05
+        },
+        camera: {
+          x: -170,
+          y: -40,
+          zoom: 0.3
+        },
+        bodies: [
+          {
+            id: "sun",
+            type: "fixedStar",
+            x: 0,
+            y: 0,
+            vx: 0,
+            vy: 0,
+            m: 3e3,
+            r: 30,
+            fixed: true,
+            label: "Солнце"
+          },
+          {
+            id: "p1",
+            type: "fixedPlanet",
+            x: 360,
+            y: -210,
+            vx: 0,
+            vy: 34,
+            m: 520,
+            r: 16,
+            fixed: false,
+            label: "Земля"
+          },
+          {
+            id: "p2",
+            type: "fixedPlanet",
+            x: -520,
+            y: 310,
+            vx: 19,
+            vy: -10,
+            m: 700,
+            r: 18,
+            fixed: false,
+            label: "Борея"
+          },
+          {
+            id: "star2",
+            type: "fixedStar",
+            x: 980,
+            y: 180,
+            vx: 0,
+            vy: 0,
+            m: 2200,
+            r: 25,
+            fixed: true,
+            label: "Дальняя звезда"
+          }
+        ],
+        ship: {
+          id: "ship",
+          x: -700,
+          y: 130,
+          vx: 58,
+          vy: -5,
+          m: 1e-3,
+          r: 5,
+          fixed: false
+        },
+        tray: {
+          planet: {
+            m: 420,
+            r: 14,
+            drawR: 13,
+            label: "Планета",
+            count: 2
+          },
+          giant: {
+            m: 1450,
+            r: 20,
+            drawR: 18,
+            label: "Гигант",
+            count: 1
+          },
+          star: {
+            m: 4e3,
+            r: 27,
+            drawR: 22,
+            label: "Звезда",
+            count: 1
+          }
+        }
+      },
+      placement: {
+        regions: [
+          {
+            kind: "rect",
+            xMin: -1e3,
+            xMax: 1500,
+            yMin: -800,
+            yMax: 800
+          }
+        ],
+        shipClearance: 90,
+        bodyGap: 12
+      },
+      mission: {
+        type: "earth-return",
+        maxCoordinateYears: 2e3,
+        target: {
+          centre: {
+            kind: "body",
+            bodyId: "p1"
+          },
+          radius: 50
+        },
+        limits: {
+          relativeSpeed: {
+            min: 0,
+            max: 100
+          },
+          earthYears: {
+            min: 300
+          },
+          shipYears: {
+            max: 100
+          }
+        }
+      }
+    }
+  ];
+
+  // repository:src/game-entry.js
+  function levelFromSearch(search) {
+    const id2 = new URLSearchParams(search).get("mission");
+    if (!id2) return null;
+    const example = mission_examples_default.find((level) => level.id === id2);
+    if (!example) return null;
+    return loadLevel(example);
+  }
+
+  // repository:src/main.js
+  var element = (id2) => document.getElementById(id2);
+  var canvas = element("c");
+  var stage = element("stage");
+  var play = element("play");
+  var reset = element("reset");
+  var follow = element("follow");
+  var status = element("status");
+  var hint = element("hint");
+  var earthTime = element("earth-time");
+  var shipTime = element("ship-time");
+  var cards = [...document.querySelectorAll(".card")];
+  var selectedLevel = levelFromSearch(globalThis.location?.search ?? "");
+  var game = selectedLevel ? createGameFromLevel(selectedLevel) : createGame();
+  var missionText = element("mission");
+  var resultText = element("result");
+  missionText.hidden = !game.level;
+  if (game.level) missionText.textContent = describeMission(game.level);
+  var earthLabel = element("earth-clock-label");
+  var observerBody = game.scenario.earthClock?.kind === "body" ? game.scenario.bodies.find((body2) => body2.id === game.scenario.earthClock.bodyId) : null;
+  earthLabel.textContent = observerBody ? `${observerBody.label}:` : "Опорные часы:";
+  earthLabel.title = observerBody ? `Часы привязаны к телу «${observerBody.label}»` : "Неподвижный наблюдатель в точке старта; это часы, а не планета Земля.";
+  var renderer = createRenderer(canvas, stage);
+  function updateUI() {
+    const simulation = game.simulation;
+    play.disabled = simulation.status !== "ready";
+    hint.hidden = simulation.status !== "ready";
+    follow.textContent = game.camera.follow ? "🎯 Слежение" : "🎯 Корабль";
+    resultText.hidden = !simulation.result;
+    if (simulation.result) resultText.textContent = `${simulation.result.outcome === "win" ? "✓ Победа" : "× Поражение"}: ${simulation.result.message}`;
+    status.textContent = simulation.status === "win" ? "✓ Победа" : simulation.status === "lose" ? "× Поражение" : simulation.status === "error" ? "⚠ ошибка симуляции — нажмите Reset" : simulation.status === "collision" ? "💥 столкновение — нажмите Reset" : simulation.status === "ready" ? "готово" : `v=${Math.hypot(simulation.ship.vx, simulation.ship.vy).toFixed(0)}`;
+    earthTime.textContent = simulation.earthYears.toFixed(2);
+    shipTime.textContent = simulation.shipYears.toFixed(2);
+    for (const card of cards) {
+      const spec = game.scenario.tray[card.dataset.type];
+      const used = !spec || game.configuration.placed.filter((p) => p.type === card.dataset.type).length >= (spec.count ?? 1);
+      card.hidden = !spec;
+      card.classList.toggle("used", used);
+      card.setAttribute("aria-disabled", String(used || simulation.status !== "ready"));
+    }
+  }
+  var input = createInput(game, {
+    canvas,
+    tray: element("tray"),
+    cards,
+    getViewport: () => renderer.viewport
+  }, updateUI);
+  var last = 0;
+  play.addEventListener("click", () => {
+    input.cancel();
+    if (startGame(game)) last = performance.now();
+    updateUI();
+  });
+  reset.addEventListener("click", () => {
+    input.cancel();
+    resetGame(game);
+    updateUI();
+  });
+  follow.addEventListener("click", () => {
+    game.camera.follow = !game.camera.follow;
+    if (game.camera.follow) {
+      game.camera.x = game.simulation.ship.x;
+      game.camera.y = game.simulation.ship.y;
+    }
+    updateUI();
+  });
+  document.addEventListener("visibilitychange", () => {
+    input.cancel();
+    last = performance.now();
+    discardFrameTime(game.simulation);
+  });
+  function frame(now) {
+    if (game.simulation.status === "running" && !document.hidden) {
+      advanceFrame(game.simulation, game.scenario.physics, (now - last) / 1e3);
+      last = now;
+      followShip(game.camera, game.simulation.ship);
+      updateUI();
+    }
+    renderer.draw(game, input.state);
+    requestAnimationFrame(frame);
+  }
+  renderer.resize();
+  new ResizeObserver(() => {
+    input.cancel();
+    renderer.resize();
+  }).observe(stage);
+  updateUI();
+  requestAnimationFrame(frame);
+})();
+
+</script>
+</body></html>
+
