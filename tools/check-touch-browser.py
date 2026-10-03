@@ -116,7 +116,7 @@ with sync_playwright() as p:
     # Invalid position is shown while the existing-body preview is still separate.
     before = state()['configuration']
     touch('touchStart', 1, at(-310, -120))
-    touch('touchMove', 1, at(0, 0))
+    touch('touchMove', 1, at(-30, 0))
     assert state()['configuration'] == before
     page.screenshot(path=str(OUTPUT / 'invalid-existing-drag.png'))
     touch('touchEnd', 1)
