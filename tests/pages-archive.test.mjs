@@ -20,8 +20,8 @@ async function fixture(t) {
   await writeFile(resolve(repo, 'release.json'), '{"entrypoint":"game.html"}');
   await writeFile(resolve(repo, 'game.html'), '<!doctype html><p>release</p>');
   git('add', '.'); git('commit', '-m', 'release'); git('tag', 'v0.2.0');
-  async function dev(text = 'dev') {
-    await writeFile(resolve(repo, 'VERSION'), '0.3.0-alpha.1\n');
+  async function dev(text = 'dev', version = '0.3.0-alpha.1') {
+    await writeFile(resolve(repo, 'VERSION'), `${version}\n`);
     await writeFile(resolve(repo, 'CHANGELOG.md'), '## Не выпущено\n');
     await writeFile(resolve(repo, 'game.html'), `<!doctype html><p>${text}</p>`);
     git('add', '.'); git('commit', '-m', text);
@@ -132,4 +132,41 @@ test('параллельные писатели архива сохраняют 
   f.git('fetch', 'origin', 'pages-archive');
   assert.match(f.git('show', `FETCH_HEAD:dev/0.3.0-alpha.1-${f.git('rev-parse', 'HEAD').slice(0, 12)}/index.html`), /left/);
   assert.match(f.git('show', `FETCH_HEAD:dev/0.3.0-alpha.1-${git('rev-parse', 'HEAD').slice(0, 12)}/index.html`), /right/);
+});
+
+test('новый release удаляет предыдущий цикл dev; поздний старый job не возвращает его', async t => {
+  const f = await fixture(t); await f.dev('before-release');
+  const old = resolve(f.root, 'old');
+  await preparePublication(f.repo, old, { branch: 'main', runId: '10' });
+  await mergeArchive(old, f.archive);
+  const oldName = `0.3.0-alpha.1-${f.git('rev-parse', 'HEAD').slice(0, 12)}`;
+  await writeFile(resolve(f.repo, 'VERSION'), '0.3.0\n');
+  await writeFile(resolve(f.repo, 'CHANGELOG.md'), '## 0.3.0\n');
+  f.git('add', '.'); f.git('commit', '-m', 'release 0.3'); f.git('tag', 'v0.3.0');
+  const release = resolve(f.root, 'release');
+  await preparePublication(f.repo, release, { requiredTag: 'v0.3.0', runId: '20' });
+  await mergeArchive(release, f.archive); await renderSite(f.archive, f.site);
+  await assert.rejects(readFile(resolve(f.archive, 'dev', oldName, 'index.html')), { code: 'ENOENT' });
+  assert.ok(!(await readFile(resolve(f.site, 'dev/index.html'), 'utf8')).includes(oldName));
+  assert.match(await readFile(resolve(f.site, 'release/0.3.0/index.html'), 'utf8'), /before-release/);
+  assert.match(await readFile(resolve(f.site, 'release/0.2.0/index.html'), 'utf8'), /release/);
+  // Payload prepared before the release must not resurrect its expired files/pointers.
+  await mergeArchive(old, f.archive);
+  await assert.rejects(readFile(resolve(f.archive, 'dev', oldName, 'index.html')), { code: 'ENOENT' });
+  await f.dev('after-release', '0.4.0-alpha.1');
+  const current = resolve(f.root, 'current');
+  await preparePublication(f.repo, current, { branch: 'main', runId: '21' });
+  await mergeArchive(current, f.archive);
+  const currentName = `0.4.0-alpha.1-${f.git('rev-parse', 'HEAD').slice(0, 12)}`;
+  // Rerunning a pre-release push after the tag also keeps its ORIGINAL run ID.
+  const late = resolve(f.root, 'late');
+  await preparePublication(f.repo, late, { branch: 'late-old-run', runId: '19' });
+  await mergeArchive(late, f.archive);
+  // Rerunning the release later must not advance the cutoff or delete current dev.
+  const rerun = resolve(f.root, 'rerun');
+  await preparePublication(f.repo, rerun, { requiredTag: 'v0.3.0', runId: '40' });
+  await mergeArchive(rerun, f.archive); await renderSite(f.archive, f.site);
+  assert.match(await readFile(resolve(f.site, 'dev', currentName, 'index.html'), 'utf8'), /after-release/);
+  assert.ok(!(await readFile(resolve(f.site, 'dev/index.html'), 'utf8')).includes('late-old-run'));
+  assert.equal(JSON.parse(await readFile(resolve(f.archive, '_retention.json'))).runId, '20');
 });

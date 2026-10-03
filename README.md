@@ -61,7 +61,8 @@ node tools/audit-spike.mjs
 в [dev](https://serefimov.github.io/incredible-universe/dev/). На этой странице
 можно выбрать последние сборки веток или конкретный коммит для проверки на
 телефоне. Каждая сборка имеет постоянный адрес вида
-`dev/0.3.0-alpha.1-012345abcdef/`; прежние сборки сохраняются.
+`dev/0.3.0-alpha.1-012345abcdef/`; сборки сохраняются до следующего стабильного релиза.
+При новом релизе предыдущий цикл dev очищается; release сохраняет все выпуски.
 
 Стабильные теги `vX.Y.Z` публикуются в
 [release](https://serefimov.github.io/incredible-universe/release/), по адресу

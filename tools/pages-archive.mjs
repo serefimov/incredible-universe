@@ -14,6 +14,22 @@ const escape = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;
 const page = (title, content) => `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(title)}</title><style>body{font:16px system-ui;max-width:850px;margin:24px auto;padding:0 16px;line-height:1.5}li{margin:12px 0}a{overflow-wrap:anywhere}</style></head><body><h1>${escape(title)}</h1>${content}</body></html>\n`;
 const directories = async path => existsSync(path) ? (await readdir(path, { withFileTypes: true })).filter(e => e.isDirectory()).map(e => e.name) : [];
 
+const compareVersions = (a, b) => {
+  const left = a.split('.').map(BigInt), right = b.split('.').map(BigInt);
+  for (let i = 0; i < 3; i++) if (left[i] !== right[i]) return left[i] < right[i] ? -1 : 1;
+  return 0;
+};
+const retentionPath = archive => resolve(archive, '_retention.json');
+
+// A release run establishes a permanent cutoff. Rerunning it must not move
+// the cutoff forward and delete newer dev builds. Legacy records predate this policy.
+function keepDev(record, retention) {
+  if (!retention) return true;
+  if (!record.baseRelease) return compareVersions(record.version.split('-')[0], retention.version) > 0;
+  return record.baseRelease === retention.version &&
+    (retention.runId === '0' || BigInt(record.runId) > BigInt(retention.runId));
+}
+
 export async function preparePublication(repo, output, { branch, requiredTag, mainRef, runId = '0' } = {}) {
   const temp = await mkdtemp(resolve(tmpdir(), 'universe-releases-'));
   try {
@@ -22,6 +38,8 @@ export async function preparePublication(repo, output, { branch, requiredTag, ma
     for (const version of releases.versions) {
       await cp(resolve(temp, version), resolve(output, 'release', version), { recursive: true });
     }
+    await writeFile(retentionPath(output), JSON.stringify({ version: releases.latest,
+      runId: requiredTag === `v${releases.latest}` ? String(runId) : '0' }) + '\n');
     if (branch) {
       const { version } = checkWorkingTree(repo);
       const commit = git(repo, 'rev-parse', 'HEAD');
@@ -31,7 +49,7 @@ export async function preparePublication(repo, output, { branch, requiredTag, ma
       await writeFile(resolve(folder, 'index.html'), await buildGame(repo));
       for (const path of ['VERSION', 'LICENSE', 'CHANGELOG.md']) await cp(resolve(repo, path), resolve(folder, path));
       await writeFile(resolve(folder, 'release.json'), JSON.stringify({
-        version, commit, branch, builtAt: new Date().toISOString(), name,
+        version, commit, branch, baseRelease: releases.latest, runId: String(runId), builtAt: new Date().toISOString(), name,
         source: `https://github.com/serefimov/incredible-universe/tree/${commit}`,
       }, null, 2) + '\n');
       const refs = resolve(output, '_refs'); await mkdir(refs, { recursive: true });
@@ -43,10 +61,29 @@ export async function preparePublication(repo, output, { branch, requiredTag, ma
 
 // Immutable build folders; only branch pointers may advance. Used before each optimistic push.
 export async function mergeArchive(payload, archive) {
+  await mkdir(archive, { recursive: true });
+  let retention = existsSync(retentionPath(archive)) ? await json(retentionPath(archive)) : null;
+  if (existsSync(retentionPath(payload))) {
+    const incoming = await json(retentionPath(payload));
+    if (!retention || compareVersions(incoming.version, retention.version) > 0 ||
+        (incoming.version === retention.version && retention.runId === '0' && incoming.runId !== '0')) {
+      retention = incoming; await writeFile(retentionPath(archive), JSON.stringify(retention) + '\n');
+    }
+  }
+  await mkdir(resolve(archive, '_refs'), { recursive: true });
+  for (const name of await directories(resolve(archive, 'dev'))) {
+    const folder = resolve(archive, 'dev', name);
+    if (!keepDev(await json(resolve(folder, 'release.json')), retention)) await rm(folder, { recursive: true, force: true });
+  }
+  for (const file of await readdir(resolve(archive, '_refs'))) {
+    const path = resolve(archive, '_refs', file), ref = await json(path);
+    if (!existsSync(resolve(archive, 'dev', ref.name))) await rm(path);
+  }
   for (const channel of ['dev', 'release']) {
     for (const name of await directories(resolve(payload, channel))) {
       if (!/^[0-9A-Za-z.-]+$/.test(name)) throw new Error('Некорректный адрес сборки');
       const from = resolve(payload, channel, name), to = resolve(archive, channel, name);
+      if (channel === 'dev' && !keepDev(await json(resolve(from, 'release.json')), retention)) continue;
       if (existsSync(to)) {
         const old = await json(resolve(to, 'release.json')), incoming = await json(resolve(from, 'release.json'));
         if (old.commit !== incoming.commit || old.version !== incoming.version) throw new Error(`Конфликт архива ${channel}/${name}`);
@@ -61,8 +98,12 @@ export async function mergeArchive(payload, archive) {
     if (!/^[A-Za-z0-9_-]+\.json$/.test(file)) throw new Error('Некорректная ссылка ветки');
     const from = resolve(payload, '_refs', file), to = resolve(archive, '_refs', file);
     const incoming = await json(from);
+    if (!existsSync(resolve(archive, 'dev', incoming.name)) ||
+        !keepDev(await json(resolve(payload, 'dev', incoming.name, 'release.json')), retention)) continue;
     if (!existsSync(to) || BigInt(incoming.runId) > BigInt((await json(to)).runId)) await cp(from, to);
   }
+
+
 }
 
 export async function renderSite(archive, output) {
