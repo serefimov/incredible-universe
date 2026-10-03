@@ -101,10 +101,12 @@ export function createInterface(game, element, input, {
   }
   function reset() { dismiss(); seen = null; cancelGesture(); trayOpen(true); element('mission-body').scrollTop = 0; }
   function paint() {
+    element('mission-brief').classList.toggle('interacting', Boolean(input.state.drag || input.state.pan || input.state.pinch));
     element('trayText').hidden = input.state.drag?.kind !== 'new';
     const returning = input.state.drag?.kind === 'existing';
     toggle.classList.toggle('drop-ready', returning);
-    element('tray-label').textContent = returning ? 'Вернуть тело' : 'Ящик тел';
+    element('tray-label').textContent = returning ? 'Вернуть тело' :
+      game.tutorial?.stepIndex === 0 && game.level.tutorial.steps[0].until === 'collision' ? 'Планета появится после столкновения и Сброса' : 'Ящик тел';
   }
   return { update, reset, closeTray, closeInfo, dismiss, paint, cancelGesture };
 }

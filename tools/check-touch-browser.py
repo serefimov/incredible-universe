@@ -46,7 +46,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             source = (ROOT / 'src/main.js').read_text().replace('let last = 0;', '''
             globalThis.inspectGame = () => ({configuration: game.configuration,
               simulation: game.simulation, camera: game.camera,
-              drag: input.state.drag, pointers: input.state.pointers.size});
+              tutorial: game.tutorial, drag: input.state.drag, pointers: input.state.pointers.size});
             let last = 0;''')
             self.send_response(200)
             self.send_header('Content-Type', 'application/javascript')
@@ -430,10 +430,12 @@ with sync_playwright() as p:
         page.goto(url + '/?mission=training-1')
         page.wait_for_function('typeof inspectGame === "function"')
         assert page.locator('#title').inner_text() == 'Первое вмешательство'
-        assert page.locator('.card:visible').count() == 1
+        assert page.locator('.card:visible').count() == 0
+        assert state()['tutorial']['stepIndex'] == 0
         assert page.locator('#earth-clock').is_hidden()
         assert page.locator('#mission-brief').is_visible()
-        assert page.locator('#mission-brief').inner_text() == 'Выжить 500 лет по часам корабля без столкновения.'
+        assert 'Выжить 500 лет по часам корабля без столкновения.' in page.locator('#mission-brief').inner_text()
+        assert 'Пуск без планеты' in page.locator('#mission-brief').inner_text()
         brief = page.locator('#mission-brief').bounding_box()
         assert brief['y'] + brief['height'] <= page.locator('#tray-sheet').bounding_box()['y']
         page.locator('#info').tap()
@@ -441,18 +443,34 @@ with sync_playwright() as p:
         page.locator('#info-close').tap()
         page.screenshot(path=str(OUTPUT / f'first-level-start-{width}x{height}.png'))
         page.locator('#play').tap()
-        assert page.locator('#mission-brief').is_hidden()
+        assert 'Наблюдайте за полётом' in page.locator('#mission-brief').inner_text()
         page.wait_for_function('inspectGame().simulation.status === "lose"')
         assert state()['simulation']['collisionId'] == 'helios'
+        assert state()['tutorial']['stepIndex'] == 0
+        assert page.locator('.card:visible').count() == 0
         page.locator('#outcome-overlay').tap()
+        assert 'Нажмите Сброс' in page.locator('#mission-brief').inner_text()
+        page.screenshot(path=str(OUTPUT / f'tutorial-collision-{width}x{height}.png'))
         page.locator('#info').tap()
         assert 'Гелиос' in page.locator('#result').inner_text()
         page.locator('#play').tap()
         page.locator('#info-close').tap()
         assert page.locator('#tray').is_visible()
         assert page.locator('#mission-brief').is_visible()
-        drag(centre('[data-type=planet]'),at(-110,-120))
+        assert state()['tutorial']['stepIndex'] == 1
+        assert page.locator('.card:visible').count() == 1
+        assert 'Перетащите планету' in page.locator('#mission-brief').inner_text()
+        brief = page.locator('#mission-brief').bounding_box()
+        assert brief['y'] + brief['height'] <= page.locator('#tray-sheet').bounding_box()['y']
+        # The actual gesture goes through the instruction overlay without interception.
+        touch('touchStart',1,centre('[data-type=planet]'))
+        assert page.locator('#mission-brief').is_hidden()
+        touch('touchMove',1,at(-110,-120))
+        touch('touchEnd',1)
         assert len(state()['configuration']['placed']) == 1
+        brief = page.locator('#mission-brief').bounding_box()
+        px,py = at(-110,-120)
+        assert not (brief['x'] <= px <= brief['x']+brief['width'] and brief['y'] <= py <= brief['y']+brief['height']), 'brief obscures the placed planet'
         placement = state()['configuration']
         page.screenshot(path=str(OUTPUT / f'first-level-placement-{width}x{height}.png'))
         page.locator('#play').tap()
@@ -466,6 +484,8 @@ with sync_playwright() as p:
         page.locator('#info-close').tap()
         assert state()['configuration'] == placement
         assert state()['simulation']['shipYears'] == 0
+        assert state()['tutorial']['completed'] is True
+        assert page.locator('.card:visible').count() == 1
         page.locator('#follow').tap()
         drag(at(-110,-120),at(-105,-120))
         assert abs(state()['configuration']['placed'][0]['x']+105) < 2
@@ -477,13 +497,15 @@ with sync_playwright() as p:
             page.locator('#follow').tap()
         drag(at(-105,-120),centre('#tray-toggle'))
         assert not state()['configuration']['placed']
+        assert state()['tutorial']['stepIndex'] == 1
         print(f'PASS first campaign level: collision, one-planet Win, Reset, move, return {width}x{height}', flush=True)
     page.goto(url + '/dist/game/index.html?mission=training-1')
     assert page.locator('#title').inner_text() == 'Первое вмешательство'
-    assert page.locator('.card:visible').count() == 1
+    assert page.locator('.card:visible').count() == 0
     assert page.locator('#earth-clock').is_hidden()
     print('PASS authored campaign embedded into standalone HTML', flush=True)
     assert page.locator('#mission-brief').is_visible()
+    assert 'Пуск без планеты' in page.locator('#mission-brief').inner_text()
     assert not errors, errors
     browser.close()
 server.shutdown()

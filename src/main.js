@@ -8,6 +8,7 @@ import { levelFromSearch } from './game-entry.js';
 import { earthClockBody } from './clock-display.js';
 import { missionDisplay } from './mission-display.js';
 import { createInterface } from './interface.js';
+import { trayCount } from './tutorial.js';
 
 const element = id => document.getElementById(id);
 const canvas = element('c'), stage = element('stage');
@@ -40,8 +41,8 @@ function updateUI() {
   follow.classList.toggle('tracking', simulation.status === 'running' && game.camera.follow);
   hint.hidden = simulation.status !== 'ready';
   const display = missionDisplay(game);
-  element('mission-brief').textContent = display.brief;
-  element('mission-brief').hidden = !ready || !display.brief;
+  element('mission-brief').textContent = [ready ? display.brief : '', display.tutorial].filter(Boolean).join('\n');
+  element('mission-brief').hidden = !(ready && display.brief) && !display.tutorial;
   element('mission-heading').textContent = display.heading;
   missionText.textContent = display.goal;
   element('conditions').textContent = display.conditions;
@@ -60,8 +61,8 @@ function updateUI() {
   shipTime.textContent = simulation.shipYears.toFixed(2);
   for (const card of cards) {
     const spec = game.scenario.tray[card.dataset.type];
-    const used = !spec || game.configuration.placed.filter(p => p.type === card.dataset.type).length >= (spec.count ?? 1);
-    card.hidden = !spec;
+    const used = !spec || game.configuration.placed.filter(p => p.type === card.dataset.type).length >= trayCount(game, card.dataset.type);
+    card.hidden = !spec || trayCount(game, card.dataset.type) === 0;
     card.classList.toggle('used', used);
     card.setAttribute('aria-disabled', String(used || simulation.status !== 'ready'));
   }
