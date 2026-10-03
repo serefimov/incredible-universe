@@ -6,6 +6,7 @@ import { createRenderer } from './render.js';
 import { createInput } from './input.js';
 import { levelFromSearch } from './game-entry.js';
 import { describeMission } from './levels.js';
+import { earthClockBody } from './clock-display.js';
 
 const element = id => document.getElementById(id);
 const canvas = element('c'), stage = element('stage');
@@ -19,11 +20,11 @@ const missionText = element('mission'), resultText = element('result');
 missionText.hidden = !game.level;
 if (game.level) missionText.textContent = describeMission(game.level);
 const earthLabel = element('earth-clock-label');
-const observerBody = game.scenario.earthClock?.kind === 'body'
-  ? game.scenario.bodies.find(body => body.id === game.scenario.earthClock.bodyId) : null;
-earthLabel.textContent = observerBody ? `${observerBody.label}:` : 'Опорные часы:';
-earthLabel.title = observerBody ? `Часы привязаны к телу «${observerBody.label}»`
-  : 'Неподвижный наблюдатель в точке старта; это часы, а не планета Земля.';
+const earthClock = element('earth-clock');
+const observerBody = earthClockBody(game);
+earthClock.hidden = !observerBody;
+earthLabel.textContent = 'Земля:';
+if (observerBody) earthLabel.title = `Часы на теле «${observerBody.label}»`;
 const renderer = createRenderer(canvas, stage);
 function updateUI() {
   const simulation = game.simulation;

@@ -2,6 +2,7 @@
 import { worldToScreen } from './camera.js';
 import { validPlacement } from './state.js';
 import { resolveTarget } from './levels.js';
+import { earthClockBody } from './clock-display.js';
 
 export function createRenderer(canvas, stage) {
   const ctx = canvas.getContext('2d');
@@ -70,14 +71,14 @@ export function createRenderer(canvas, stage) {
       ctx.fillStyle = ok ? '#d7deff' : '#ff899b'; ctx.font = '12px system-ui';
       ctx.fillText(ok ? '✓' : '×', s.x + scenario.tray[drag.type].drawR + 9, s.y - 10);
     }
+    const clockBody = earthClockBody(game);
     const observer = simulation.earthObserver, os = screen(observer.x, observer.y);
-    if (os.x >= -20 && os.x <= W + 20 && os.y >= -20 && os.y <= H + 20) {
+    if (clockBody && os.x >= -20 && os.x <= W + 20 && os.y >= -20 && os.y <= H + 20) {
       circle(os.x, os.y, 6, '#101c31', '#70e1de');
       ctx.strokeStyle = '#70e1de'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(os.x, os.y - 4); ctx.lineTo(os.x, os.y); ctx.lineTo(os.x + 3, os.y); ctx.stroke();
-      const body = simulation.earthBinding ? simulation.bodies.find(b => b.id === simulation.earthBinding.bodyId) : null;
       ctx.fillStyle = '#70e1de'; ctx.font = '10px system-ui';
-      ctx.fillText(body ? `Часы: ${body.label}` : 'Опорные часы', Math.min(os.x + 10, W - 105), os.y + 23);
+      ctx.fillText('Часы Земли', Math.min(os.x + 10, W - 105), os.y + 23);
     }
     const ship = simulation.ship, ss = screen(ship.x, ship.y);
     ctx.save(); ctx.translate(ss.x, ss.y); ctx.rotate(Math.atan2(ship.vy, ship.vx));

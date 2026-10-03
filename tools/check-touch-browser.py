@@ -180,6 +180,8 @@ with sync_playwright() as p:
     # Mission examples are embedded into the same standalone HTML, without fetches.
     page.goto(url + '/dist/game/index.html?mission=example-survival')
     assert page.locator('#mission').is_visible()
+    assert page.locator('#earth-clock').is_hidden()
+    assert page.locator('#ship-clock').is_visible()
     page.locator('#play').tap()
     page.wait_for_function('document.getElementById("status").textContent.includes("Победа")')
     assert 'выживания' in page.locator('#result').inner_text()
@@ -194,12 +196,15 @@ with sync_playwright() as p:
     assert 'Столкновение' in page.locator('#result').inner_text()
     page.set_viewport_size({'width': 390, 'height': 844})
     page.goto(url + '/dist/game/index.html?mission=example-earth-return')
+    assert page.locator('#earth-clock').is_visible()
+    assert page.locator('#ship-clock').is_visible()
     assert 'Земля' in page.locator('#earth-clock-label').inner_text()
     page.screenshot(path=str(OUTPUT / 'earth-mission.png'))
     page.goto(url + '/dist/game/index.html')
-    assert page.locator('#earth-clock-label').inner_text() == 'Опорные часы:'
+    assert page.locator('#earth-clock').is_hidden()
+    assert page.locator('#ship-clock').is_visible()
     page.locator('#follow').tap()
-    page.screenshot(path=str(OUTPUT / 'reference-clock.png'))
+    page.screenshot(path=str(OUTPUT / 'ship-only-clock.png'))
     print('PASS standalone mission Win/Lose, reason, Reset, repeat and clock labels', flush=True)
     assert not errors, errors
     browser.close()
