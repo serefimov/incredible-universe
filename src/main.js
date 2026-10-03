@@ -67,7 +67,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 renderer.resize();
-new ResizeObserver(() => renderer.resize()).observe(stage);
+new ResizeObserver(() => { input.cancel(); renderer.resize(); }).observe(stage);
 updateUI();
 requestAnimationFrame(frame);
 

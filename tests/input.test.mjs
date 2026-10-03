@@ -159,3 +159,79 @@ for (const pointerType of ['mouse', 'touch']) {
     }
   });
 }
+
+for (const kind of ['new', 'existing']) {
+  test(`второй палец отменяет ${kind} drag; pinch и последующий pan не меняют тела`, () => {
+    const h = harness(); h.place('planet', -350, -140);
+    const before = structuredClone({ simulation: h.game.simulation, configuration: h.game.configuration });
+    const at = h.worldEvent(-350, -140), first = kind === 'new' ? h.cards[2] : h.canvas;
+    first.dispatch('pointerdown', kind === 'new' ? { clientX: 40, clientY: 790 } : at);
+    first.dispatch('pointermove', { clientX: 150, clientY: 350 });
+    h.canvas.dispatch('pointerdown', { clientX: 250, clientY: 350, pointerId: 2 });
+    assert.equal(h.input.state.drag, null);
+    first.dispatch('pointermove', { clientX: 100, clientY: 350 });
+    h.canvas.dispatch('pointermove', { clientX: 300, clientY: 350, pointerId: 2 });
+    assert.ok(h.game.camera.zoom > 0.72);
+    first.dispatch('pointerup', { clientX: 100, clientY: 350 });
+    const camera = structuredClone(h.game.camera);
+    h.canvas.dispatch('pointermove', { clientX: 320, clientY: 350, pointerId: 2 });
+    assert.ok(Math.abs(h.game.camera.x - (camera.x - 20 / camera.zoom)) < 1e-10);
+    h.canvas.dispatch('pointerup', { clientX: 40, clientY: 790, pointerId: 2 });
+    assert.deepEqual({ simulation: h.game.simulation, configuration: h.game.configuration }, before);
+    assert.equal(h.input.state.pointers.size, 0);
+    assert.equal(h.input.state.pan, null);
+    assert.equal(h.input.state.pinch, null);
+  });
+}
+
+test('третий палец не сбрасывает опорные точки pinch и его отмена не мешает двум первым', () => {
+  const h = harness();
+  h.canvas.dispatch('pointerdown', { clientX: 100, clientY: 350 });
+  h.canvas.dispatch('pointerdown', { clientX: 200, clientY: 350, pointerId: 2 });
+  h.canvas.dispatch('pointermove', { clientX: 300, clientY: 350, pointerId: 2 });
+  const before = structuredClone(h.game.camera);
+  h.canvas.dispatch('pointerdown', { clientX: 400, clientY: 350, pointerId: 3 });
+  h.canvas.dispatch('pointermove', { clientX: 500, clientY: 350, pointerId: 3 });
+  h.canvas.dispatch('pointercancel', { pointerId: 3 });
+  assert.equal(h.input.state.pointers.size, 2);
+  assert.equal(h.canvas.hasPointerCapture(3), false);
+  assert.deepEqual(h.game.camera, before);
+  h.canvas.dispatch('pointermove', { clientX: 350, clientY: 350, pointerId: 2 });
+  assert.ok(Math.abs(h.game.camera.zoom - 1.8) < 1e-10);
+});
+
+test('карточка не запускает перенос во время pan или pinch карты', () => {
+  const h = harness();
+  h.canvas.dispatch('pointerdown', { clientX: 100, clientY: 350 });
+  h.cards[0].dispatch('pointerdown', { clientX: 40, clientY: 790, pointerId: 2 });
+  assert.equal(h.input.state.drag, null);
+  assert.equal(h.cards[0].hasPointerCapture(2), false);
+  h.canvas.dispatch('pointerdown', { clientX: 200, clientY: 350, pointerId: 2 });
+  h.cards[0].dispatch('pointerdown', { clientX: 40, clientY: 790, pointerId: 3 });
+  assert.equal(h.input.state.drag, null);
+  h.input.cancel();
+  assert.equal(h.input.state.pointers.size, 0);
+});
+
+test('при захвате у края тела его центр не прыгает под палец, а карта не сдвигается', () => {
+  const h = harness(); h.place('planet', -350, -140);
+  const camera = structuredClone(h.game.camera), at = h.worldEvent(-350, -140);
+  h.canvas.dispatch('pointerdown', { ...at, clientX: at.clientX + 25 });
+  h.canvas.dispatch('pointermove', { ...at, clientX: at.clientX + 25 });
+  assert.ok(Math.abs(h.input.state.drag.x + 350) < 1e-10);
+  h.canvas.dispatch('pointerup', { ...at, clientX: at.clientX + 35 });
+  assert.ok(Math.abs(h.game.configuration.placed[0].x - (-350 + 10 / camera.zoom)) < 1e-10);
+  assert.deepEqual(h.game.camera, camera);
+});
+
+test('потеря захвата при pinch освобождает оба указателя; следующий жест работает', () => {
+  const h = harness();
+  h.canvas.dispatch('pointerdown', { clientX: 100, clientY: 350 });
+  h.canvas.dispatch('pointerdown', { clientX: 200, clientY: 350, pointerId: 2 });
+  h.canvas.dispatch('lostpointercapture', { pointerId: 1 });
+  assert.equal(h.input.state.pointers.size, 0);
+  assert.equal(h.input.state.pinch, null);
+  assert.equal(h.canvas.hasPointerCapture(2), false);
+  h.place('planet', -350, -140);
+  assert.equal(h.game.configuration.placed.length, 1);
+});

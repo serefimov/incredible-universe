@@ -22,3 +22,23 @@ jobs:
           package-manager-cache: false
       - run: npm ci
       - run: npm run check
+
+  touch-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci
+      - run: npm run build
+      - run: python3 -m pip install --disable-pip-version-check playwright==1.55.0
+      - run: python3 tools/check-touch-browser.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: touch-browser-screenshots
+          path: artifacts/touch-browser/

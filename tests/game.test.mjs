@@ -94,7 +94,7 @@ test('камера и отрисовка не изменяют расстано�
     zoomAt(game.camera, renderer.viewport, { x: 100, y: 200 }, zoom);
     game.camera.follow = true;
     followShip(game.camera, game.simulation.ship);
-    renderer.draw(game, { drag: { kind: 'existing', id: 'user_giant', x: 20, y: 40 } });
+    renderer.draw(game, { drag: { kind: 'existing', type: 'giant', id: 'user_giant', x: 20, y: 40 } });
     const screen = worldToScreen(game.camera, renderer.viewport, 100, -50);
     const world = screenToWorld(game.camera, renderer.viewport, screen.x, screen.y);
     assert.ok(Math.abs(world.x - 100) < 1e-10 && Math.abs(world.y + 50) < 1e-10);
@@ -102,3 +102,26 @@ test('камера и отрисовка не изменяют расстано�
   assert.deepEqual({ configuration: game.configuration, simulation: game.simulation, scenario: game.scenario }, before);
 });
 
+
+test('предпросмотр нового и установленного тела показывает допустимость цветом и знаком', () => {
+  const game = createGame(); placeBody(game, 'giant', -350, -140);
+  const before = clone({ simulation: game.simulation, configuration: game.configuration });
+  const text = [];
+  const ctx = new Proxy({ fillText(value) { text.push({ value, colour: this.fillStyle }); } }, {
+    get: (target, key) => target[key] ?? (() => {}),
+    set: (target, key, value) => { target[key] = value; return true; },
+  });
+  const renderer = createRenderer({ getContext: () => ctx }, { getBoundingClientRect: () => ({ width: 390, height: 694 }) });
+  renderer.resize();
+  for (const kind of ['new', 'existing']) {
+    for (const [x, y, sign] of [[-350, -250, '✓'], [0, 0, '×']]) {
+      text.length = 0;
+      renderer.draw(game, { drag: { kind, type: kind === 'new' ? 'planet' : 'giant',
+        ...(kind === 'existing' ? { id: 'user_giant' } : {}), x, y } });
+      const mark = text.find(t => t.value === sign);
+      assert.ok(mark, `${kind} ${sign}`);
+      assert.equal(mark.colour, sign === '✓' ? '#d7deff' : '#ff899b');
+    }
+  }
+  assert.deepEqual({ simulation: game.simulation, configuration: game.configuration }, before);
+});
