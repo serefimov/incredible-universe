@@ -2,6 +2,7 @@
 import { SPIKE_SCENARIO } from './scenario.js';
 import { CLOCK_CONTRACT } from './clocks.js';
 import { loadLevel, initialEarthObserver } from './levels.js';
+import { trayCount, resetTutorial } from './tutorial.js';
 
 export function createSimulation(scenario, configuration, mission = null) {
   return {
@@ -36,10 +37,11 @@ export function createGame(scenario = SPIKE_SCENARIO) {
   };
 }
 
-export function createGameFromLevel(input) {
+export function createGameFromLevel(input, { tutorial = true } = {}) {
   const level = loadLevel(input);
   const game = { ...createGame(level.universe), level };
   game.simulation.mission = level.mission;
+  if (tutorial && level.tutorial?.steps.length) game.tutorial = { stepIndex: 0, completed: false };
   return game;
 }
 
@@ -50,10 +52,11 @@ export function canEditConfiguration(game) {
 export function availableCount(game, type) {
   const spec = game.scenario.tray[type];
   if (!spec) return 0;
-  return Math.max(0, (spec.count ?? 1) - game.configuration.placed.filter(p => p.type === type).length);
+  return Math.max(0, trayCount(game, type) - game.configuration.placed.filter(p => p.type === type).length);
 }
 
 export function resetGame(game) {
+  resetTutorial(game);
   game.simulation = createSimulation(game.scenario, game.configuration, game.level?.mission);
   game.camera.follow = false;
 }
@@ -67,7 +70,7 @@ export function startGame(game) {
 
 export function validPlacement(game, type, x, y, ignoreId = null) {
   const spec = game.scenario.tray[type];
-  if (!canEditConfiguration(game) || !spec || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+  if (!canEditConfiguration(game) || !spec || trayCount(game, type) === 0 || !Number.isFinite(x) || !Number.isFinite(y)) return false;
   const { ship, bodies } = game.simulation;
   const policy = game.level?.placement;
   if (policy && !policy.regions.some(region => region.kind === 'circle'
@@ -110,4 +113,3 @@ export function removeBody(game, type, id = null) {
   resetGame(game);
   return true;
 }
-

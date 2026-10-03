@@ -20,7 +20,7 @@ function flight(game, schedule = [0.01]) {
   return clearance;
 }
 function solved(x = -110, y = -120) {
-  const game = createGameFromLevel(level);
+  const game = createGameFromLevel(level, { tutorial: false });
   assert.equal(placeBody(game, 'planet', x, y), true);
   return game;
 }
@@ -69,7 +69,7 @@ test('решение и контрольное столкновение не з�
   resetGame(game); assert.equal(placeBody(game, 'planet', -110, -120), true); flight(game); assert.equal(game.simulation.status, 'win');
 });
 
-test('план ссылается на готовые данные, оба этапа обучения подготовлены без автоматического перехода #12', () => {
+test('план ссылается на готовые данные и содержит оба этапа обучения', () => {
   const examples = JSON.parse(readFileSync(new URL('../levels/mission-examples.json', import.meta.url)));
   const input = JSON.parse(readFileSync(new URL('../levels/training-plan.json', import.meta.url)));
   const plan = loadTrainingPlan(input, examples, data);

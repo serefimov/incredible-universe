@@ -2,6 +2,7 @@
 import { resolveTarget, arrivalSpeed, missionClock } from './levels.js';
 import { inRange } from './mission-geometry.js';
 import { earthClockBody } from './clock-display.js';
+import { tutorialHint, lessonText } from './tutorial.js';
 
 const number = value => Number.isFinite(value) ? `≈${value.toFixed(2)}` : 'нет допустимого значения';
 const range = limit => [limit.min === undefined ? '' : `≥ ${limit.min}`,
@@ -81,7 +82,8 @@ export function missionDisplay(game) {
       : '💥 Столкновение. Полёт остановлен.';
     result += `\n${values.join('\n')}\nНажмите ↻ для новой попытки.`;
   }
-  return { brief: missionBrief(mission), goal: game.level ? `${game.level.title}\n${game.level.description}` : '',
+  return { tutorial: tutorialHint(game), brief: missionBrief(mission),
+    goal: game.level ? [game.level.title, game.level.description, lessonText(game)].filter(Boolean).join('\n') : '',
     conditions: rows.join('\n'), feedback, result, terminal: Boolean(result),
     heading: s.status === 'win' ? '✓ Победа — условия и результат' :
       s.status === 'lose' ? '× Поражение — условия и результат' :

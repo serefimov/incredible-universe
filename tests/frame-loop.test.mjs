@@ -1,5 +1,6 @@
 import { earthClockBody } from '../src/clock-display.js';
 import { missionDisplay } from '../src/mission-display.js';
+import { trayCount } from '../src/tutorial.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
@@ -21,7 +22,7 @@ test('реальный кадровый цикл пропускает фон, о
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8')
     .replace(/^import .*;$/gm, '');
   vm.runInNewContext(source, { document, performance: { now: () => now },
-    createGame: () => (game = createGame()), createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, levelFromSearch: () => null, resetGame, startGame, advanceFrame, discardFrameTime,
+    createGame: () => (game = createGame()), createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, trayCount, levelFromSearch: () => null, resetGame, startGame, advanceFrame, discardFrameTime,
     followShip, createInput: () => ({ cancel() {}, state: {} }),
     createRenderer: () => ({ resize() {}, draw() {}, viewport: {} }),
     ResizeObserver: class { observe() {} }, requestAnimationFrame: fn => { callback = fn; } });
@@ -79,7 +80,7 @@ test('уход в фон, Reset и Play отменяют реальные жес
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8').replace(/^import .*;$/gm, '');
   const viewport = { width: 1000, height: 694 };
   vm.runInNewContext(source, { document, performance: { now: () => now },
-    createGame: () => (game = createGame()), createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, levelFromSearch: () => null, resetGame, startGame, advanceFrame, discardFrameTime, followShip,
+    createGame: () => (game = createGame()), createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, trayCount, levelFromSearch: () => null, resetGame, startGame, advanceFrame, discardFrameTime, followShip,
     createInput: (...args) => (input = createInput(...args)),
     createRenderer: () => ({ viewport, resize() {}, draw() {} }),
     ResizeObserver: class { constructor(fn) { resizeCallback = fn; } observe() {} },

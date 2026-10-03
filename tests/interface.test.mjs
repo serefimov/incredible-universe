@@ -41,7 +41,11 @@ test('подсказка ящика видна только при перено�
   const h=harness(),before=structuredClone(h.game);
   h.ui.paint();assert.equal(h.element('trayText').hidden,true);
   h.input.state.drag={kind:'new'};h.ui.paint();assert.equal(h.element('trayText').hidden,false);
+  assert.ok(h.element('mission-brief').classList.contains('interacting'));
   h.input.state.drag=null;h.ui.paint();assert.equal(h.element('trayText').hidden,true);
+  assert.equal(h.element('mission-brief').classList.contains('interacting'),false);
+  h.input.state.pinch={};h.ui.paint();assert.ok(h.element('mission-brief').classList.contains('interacting'));
+  h.input.state.pinch=null;
   h.input.state.drag={kind:'existing'};h.ui.paint();assert.equal(h.element('trayText').hidden,true);
   assert.deepEqual(h.game,before);
 });
