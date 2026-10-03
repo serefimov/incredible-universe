@@ -16,10 +16,12 @@
   <button id="reset" aria-label="Вернуться к начальным условиям" title="Вернуться к начальным условиям">↻</button>
  </div>
  <div id="clocks" role="group" aria-label="Время с начала полёта">
-  <span>Земля: <output id="earth-time">0.00</output> лет</span>
+  <span><span id="earth-clock-label">Опорные часы:</span> <output id="earth-time">0.00</output> лет</span>
   <span>Корабль: <output id="ship-time">0.00</output> лет</span>
  </div>
+ <div id="mission" hidden></div>
  <div id="stage">
+  <div id="result" role="status" hidden></div>
   <canvas id="c" aria-label="Карта Вселенной"></canvas>
   <div id="hint"><b>До запуска:</b> тащи пустое место одним пальцем — двигай карту; колёсико/щипок — масштаб. Тела из ящика можно переставлять. <b>После ▶ камера следует за кораблём.</b></div>
  </div>

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { createGame, resetGame, startGame } from './state.js';
+import { createGame, createGameFromLevel, resetGame, startGame } from './state.js';
 import { advanceFrame, discardFrameTime } from './physics.js';
 import { followShip } from './camera.js';
 import { createRenderer } from './render.js';
 import { createInput } from './input.js';
+import { levelFromSearch } from './game-entry.js';
+import { describeMission } from './levels.js';
 
 const element = id => document.getElementById(id);
 const canvas = element('c'), stage = element('stage');
@@ -11,14 +13,28 @@ const play = element('play'), reset = element('reset'), follow = element('follow
 const status = element('status'), hint = element('hint');
 const earthTime = element('earth-time'), shipTime = element('ship-time');
 const cards = [...document.querySelectorAll('.card')];
-const game = createGame();
+const selectedLevel = levelFromSearch(globalThis.location?.search ?? '');
+const game = selectedLevel ? createGameFromLevel(selectedLevel) : createGame();
+const missionText = element('mission'), resultText = element('result');
+missionText.hidden = !game.level;
+if (game.level) missionText.textContent = describeMission(game.level);
+const earthLabel = element('earth-clock-label');
+const observerBody = game.scenario.earthClock?.kind === 'body'
+  ? game.scenario.bodies.find(body => body.id === game.scenario.earthClock.bodyId) : null;
+earthLabel.textContent = observerBody ? `${observerBody.label}:` : 'Опорные часы:';
+earthLabel.title = observerBody ? `Часы привязаны к телу «${observerBody.label}»`
+  : 'Неподвижный наблюдатель в точке старта; это часы, а не планета Земля.';
 const renderer = createRenderer(canvas, stage);
 function updateUI() {
   const simulation = game.simulation;
   play.disabled = simulation.status !== 'ready';
   hint.hidden = simulation.status !== 'ready';
   follow.textContent = game.camera.follow ? '🎯 Слежение' : '🎯 Корабль';
-  status.textContent = simulation.status === 'error' ? '⚠ ошибка симуляции — нажмите Reset' :
+  resultText.hidden = !simulation.result;
+  if (simulation.result) resultText.textContent = `${simulation.result.outcome === 'win' ? '✓ Победа' : '× Поражение'}: ${simulation.result.message}`;
+  status.textContent = simulation.status === 'win' ? '✓ Победа' :
+    simulation.status === 'lose' ? '× Поражение' :
+    simulation.status === 'error' ? '⚠ ошибка симуляции — нажмите Reset' :
     simulation.status === 'collision' ? '💥 столкновение — нажмите Reset' :
     simulation.status === 'ready' ? 'готово' :
       `v=${Math.hypot(simulation.ship.vx, simulation.ship.vy).toFixed(0)}`;

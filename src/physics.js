@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { calculateClocks } from './clocks.js';
+import { missionEvent, verifyClockSegment, makeResult } from './missions.js';
 export function acceleration(object, bodies, model) {
   let ax = 0, ay = 0;
   for (const body of bodies) {
@@ -84,16 +85,43 @@ export function stepSimulation(simulation, model, dt = model.maxStep) {
       }
     }
   } catch (error) { fail(simulation, error.message); return; }
+  const collisionEnd = fraction;
+  const segment = f => next.map((object, i) => ({ ...object,
+    x: f === 1 ? object.x : objects[i].x * (1 - f) + object.x * f,
+    y: f === 1 ? object.y : objects[i].y * (1 - f) + object.y * f,
+  }));
+  const cache = new Map();
+  const clocksAt = f => {
+    if (!cache.has(f)) cache.set(f, calculateClocks(simulation, segment(f), model, dt * f));
+    return cache.get(f);
+  };
+  let event = null, clocks;
+  try {
+    // Validate the collision-limited segment before deciding any mission result.
+    clocksAt(collisionEnd);
+    if (simulation.mission) {
+      const mission = simulation.mission;
+      if ((mission.survive && mission.survive.clock !== 'coordinate') ||
+          ['earthYears', 'shipYears'].some(key => mission.limits?.[key])) {
+        verifyClockSegment(simulation, next, model);
+      }
+      event = missionEvent(simulation, next, model, collisionEnd, clocksAt);
+    }
+    // Fractions within 1e-12 are indistinguishable geometry/root roundoff;
+    // clock and speed thresholds themselves have no tolerance or UI rounding.
+    if (collisionId !== null && (!event || collisionEnd <= event.fraction + 1e-12)) {
+      event = simulation.mission ? { fraction: collisionEnd, outcome: 'lose', reason: 'collision' } : null;
+      fraction = collisionEnd;
+    } else {
+      collisionId = null;
+      fraction = event?.fraction ?? collisionEnd;
+    }
+    clocks = clocksAt(fraction);
+  } catch (error) { fail(simulation, error.message); return; }
   const time = (simulation.steps + fraction) * dt;
   if (!Number.isFinite(time)) { fail(simulation, 'Переполнение времени'); return; }
-  const committed = next.map((object, i) => ({ ...object,
-    x: fraction === 1 ? object.x : objects[i].x * (1 - fraction) + object.x * fraction,
-    y: fraction === 1 ? object.y : objects[i].y * (1 - fraction) + object.y * fraction,
-  }));
-  if (!committed.every(finiteObject)) { fail(simulation, 'Переполнение позиции контакта'); return; }
-  let clocks;
-  try { clocks = calculateClocks(simulation, committed, model, dt * fraction); }
-  catch (error) { fail(simulation, error.message); return; }
+  const committed = segment(fraction);
+  if (!committed.every(finiteObject)) { fail(simulation, 'Переполнение позиции события'); return; }
   for (let i = 0; i < objects.length; i++) {
     if (!objects[i].fixed) Object.assign(objects[i], committed[i]);
   }
@@ -106,8 +134,13 @@ export function stepSimulation(simulation, model, dt = model.maxStep) {
     simulation.collisionFraction = fraction;
     simulation.accumulator = 0;
   }
+  if (event) {
+    simulation.status = event.outcome;
+    simulation.accumulator = 0;
+    simulation.result = makeResult(event, simulation);
+  }
   const { ship, trail } = simulation;
-  if (!trail.length || simulation.time - trail.at(-1).t > 0.12 || collisionId !== null) {
+  if (!trail.length || simulation.time - trail.at(-1).t > 0.12 || simulation.status !== 'running') {
     trail.push({ x: ship.x, y: ship.y, t: simulation.time });
     if (trail.length > 1200) trail.shift();
   }

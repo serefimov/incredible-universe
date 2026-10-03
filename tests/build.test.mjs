@@ -34,3 +34,13 @@ test('сборка из содержимого тега не подменяет 
   assert.match(bundled.toString(), /color: red/);
   await assert.rejects(bundleHTML(html, { script: '../src/main.js', style: 'src/styles.css' }, () => {}), /Некорректные пути/);
 });
+
+
+test('JSON миссий встраивается из того же дерева источников, что и скрипт', async () => {
+  const html = Buffer.from('<!doctype html><link rel="stylesheet" href="./src/styles.css"><script type="module" src="./src/main.js"></script>');
+  const files = { 'src/main.js': 'import levels from "../levels/examples.json" with {type:"json"}; console.log(levels[0].id);',
+    'levels/examples.json': '[{"id":"immutable-tag-mission"}]', 'src/styles.css': '' };
+  const bundled = await bundleHTML(html, {script:'src/main.js',style:'src/styles.css'}, path => Buffer.from(files[path]));
+  assert.match(bundled.toString(), /immutable-tag-mission/);
+  assert.ok(!bundled.toString().includes('with {type:'));
+});

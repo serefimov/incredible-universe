@@ -28,7 +28,7 @@ function dom() {
         preventDefault() {}, ...values }); },
     };
   }
-  const nodes = Object.fromEntries(['c', 'stage', 'tray', 'play', 'reset', 'follow', 'status', 'hint', 'earth-time', 'ship-time']
+  const nodes = Object.fromEntries(['c', 'stage', 'tray', 'play', 'reset', 'follow', 'status', 'hint', 'earth-time', 'ship-time', 'mission', 'result', 'earth-clock-label']
     .map(id => [id, element(id)]));
   const cards = ['planet', 'giant', 'star'].map(type => element('card', type));
   const document = { hidden: false, getElementById: id => nodes[id], querySelectorAll: () => cards,
@@ -100,7 +100,7 @@ function current(placements) {
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8')
     .replace(/^import .*;$/gm, '');
   vm.runInNewContext(source, { document: h.document, performance: { now: () => now },
-    createGame: () => {
+    levelFromSearch: () => null, describeMission: () => '', createGame: () => {
       game = createGame();
       for (const p of placements) assert.equal(placeBody(game, ...p), true);
       return game;
