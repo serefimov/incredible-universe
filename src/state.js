@@ -3,8 +3,9 @@ import { SPIKE_SCENARIO } from './scenario.js';
 import { CLOCK_CONTRACT } from './clocks.js';
 import { loadLevel, initialEarthObserver } from './levels.js';
 
-export function createSimulation(scenario, configuration) {
+export function createSimulation(scenario, configuration, mission = null) {
   return {
+    ...(mission ? { mission } : {}),
     status: 'ready', time: 0, steps: 0, accumulator: 0, trail: [],
     collisionId: null, collisionFraction: null, error: null, result: null,
     clockVersion: CLOCK_CONTRACT.version, earthYears: 0, shipYears: 0,
@@ -37,7 +38,9 @@ export function createGame(scenario = SPIKE_SCENARIO) {
 
 export function createGameFromLevel(input) {
   const level = loadLevel(input);
-  return { ...createGame(level.universe), level };
+  const game = { ...createGame(level.universe), level };
+  game.simulation.mission = level.mission;
+  return game;
 }
 
 export function canEditConfiguration(game) {
@@ -51,7 +54,7 @@ export function availableCount(game, type) {
 }
 
 export function resetGame(game) {
-  game.simulation = createSimulation(game.scenario, game.configuration);
+  game.simulation = createSimulation(game.scenario, game.configuration, game.level?.mission);
   game.camera.follow = false;
 }
 

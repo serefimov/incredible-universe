@@ -35,11 +35,11 @@ export async function bundleHTML(html, bundle, read) {
           }
           const path = posix.normalize(args.importer
             ? posix.join(posix.dirname(args.importer), args.path) : args.path);
-          if (!validSourcePath(path) || !path.endsWith('.js')) throw new Error(`Некорректный импорт: ${path}`);
+          if (!validSourcePath(path) || !(/\.(js|json)$/.test(path))) throw new Error(`Некорректный импорт: ${path}`);
           return { path, namespace: 'repository' };
         });
         builder.onLoad({ filter: /.*/, namespace: 'repository' }, args => ({
-          contents: read(args.path).toString(), loader: 'js',
+          contents: read(args.path).toString(), loader: args.path.endsWith('.json') ? 'json' : 'js',
         }));
       },
     }],

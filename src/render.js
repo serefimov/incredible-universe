@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { worldToScreen } from './camera.js';
 import { validPlacement } from './state.js';
+import { resolveTarget } from './levels.js';
+import { earthClockBody } from './clock-display.js';
 
 export function createRenderer(canvas, stage) {
   const ctx = canvas.getContext('2d');
@@ -28,6 +30,13 @@ export function createRenderer(canvas, stage) {
       circle((i * 137.3) % W, (i * 73.7) % H, (i % 3) * 0.35 + 0.3, '#aeb9d3');
     }
     ctx.globalAlpha = 1;
+    if (simulation.mission?.target) {
+      const target = resolveTarget(simulation.mission.target, simulation), ts = screen(target.x, target.y);
+      ctx.setLineDash([5, 5]);
+      circle(ts.x, ts.y, target.radius * camera.zoom, '#70e1de0c', '#70e1de');
+      ctx.setLineDash([]); ctx.fillStyle = '#70e1de'; ctx.font = '11px system-ui';
+      ctx.fillText('Область цели', Math.max(5, Math.min(ts.x + 8, W - 100)), ts.y - target.radius * camera.zoom - 5);
+    }
     if (simulation.trail.length > 1) {
       ctx.beginPath();
       let s = screen(simulation.trail[0].x, simulation.trail[0].y);
@@ -48,7 +57,8 @@ export function createRenderer(canvas, stage) {
       else if (body.type === 'planet') circle(s.x, s.y, r, '#7c8fd1', '#c7d1ff');
       else circle(s.x, s.y, r, '#69a6a1', '#aee1dc');
       ctx.fillStyle = '#aeb9d3'; ctx.font = '10px system-ui';
-      ctx.fillText(body.label, s.x + r + 5, s.y - r - 2);
+      const labelWidth = ctx.measureText(body.label)?.width ?? body.label.length * 6;
+      ctx.fillText(body.label, Math.max(5, Math.min(s.x + r + 5, W - labelWidth - 5)), s.y - r - 2);
       if (simulation.status === 'ready' && body.user) {
         ctx.fillStyle = '#7f8da9'; ctx.fillText('v = 0', s.x + r + 5, s.y + 10);
       }
@@ -60,6 +70,15 @@ export function createRenderer(canvas, stage) {
         ok ? '#7c8fd199' : '#a64c5d99', ok ? '#d7deff' : '#ff899b');
       ctx.fillStyle = ok ? '#d7deff' : '#ff899b'; ctx.font = '12px system-ui';
       ctx.fillText(ok ? '✓' : '×', s.x + scenario.tray[drag.type].drawR + 9, s.y - 10);
+    }
+    const clockBody = earthClockBody(game);
+    const observer = simulation.earthObserver, os = screen(observer.x, observer.y);
+    if (clockBody && os.x >= -20 && os.x <= W + 20 && os.y >= -20 && os.y <= H + 20) {
+      circle(os.x, os.y, 6, '#101c31', '#70e1de');
+      ctx.strokeStyle = '#70e1de'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(os.x, os.y - 4); ctx.lineTo(os.x, os.y); ctx.lineTo(os.x + 3, os.y); ctx.stroke();
+      ctx.fillStyle = '#70e1de'; ctx.font = '10px system-ui';
+      ctx.fillText('Часы Земли', Math.min(os.x + 10, W - 105), os.y + 23);
     }
     const ship = simulation.ship, ss = screen(ship.x, ship.y);
     ctx.save(); ctx.translate(ss.x, ss.y); ctx.rotate(Math.atan2(ship.vy, ship.vx));

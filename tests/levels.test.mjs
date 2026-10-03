@@ -140,11 +140,12 @@ test('ошибка привязанного наблюдателя атомар�
 });
 
 test('полный полёт уровня до столкновения и Reset воспроизводят состояние', () => {
-  const game = createGameFromLevel(example());
+  const input = example(); input.mission.survive.years = 300; input.mission.maxCoordinateYears = 500;
+  const game = createGameFromLevel(input);
   const fly = () => {
     startGame(game);
     for (let i = 0; i < 2000 && game.simulation.status === 'running'; i++) stepSimulation(game.simulation, game.scenario.physics);
-    assert.equal(game.simulation.status, 'collision'); return physical(game);
+    assert.equal(game.simulation.status, 'lose'); assert.equal(game.simulation.result.reason, 'collision'); return physical(game);
   };
   const first = fly(); resetGame(game); assert.deepEqual(fly(), first);
 });
@@ -166,7 +167,7 @@ test('привязанные земные часы учитывают тольк
   Object.assign(input.universe.ship, { x: -1, y: 0, vx: 800, vy: 0, r: 0.1 });
   const game = createGameFromLevel(input); startGame(game); stepSimulation(game.simulation, game.scenario.physics);
   const s = game.simulation;
-  assert.equal(s.status, 'collision'); near(s.time, 0.0016);
+  assert.equal(s.status, 'lose'); assert.equal(s.result.reason, 'collision'); near(s.time, 0.0016);
   near(s.earthObserver.x, 16.48); near(s.earthYears, 0.16 * Math.sqrt(0.91)); near(s.shipYears, 0.096);
 });
 
