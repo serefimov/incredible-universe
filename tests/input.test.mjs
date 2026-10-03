@@ -42,6 +42,16 @@ function harness(pointerType = 'touch', game = createGame()) {
 }
 
 for (const pointerType of ['mouse', 'touch']) {
+  test(`отпускание тела вне карты и области возврата отменяет перенос (${pointerType})`, () => {
+    const h = harness(pointerType); h.place('planet', -350, -140);
+    const before = structuredClone({ configuration:h.game.configuration, simulation:h.game.simulation });
+    h.canvas.dispatch('pointerdown', h.worldEvent(-350, -140));
+    h.canvas.dispatch('pointerup', {clientX:50, clientY:900});
+    assert.deepEqual({configuration:h.game.configuration, simulation:h.game.simulation},before);
+    h.cards[2].dispatch('pointerdown', {clientX:40,clientY:790});
+    h.cards[2].dispatch('pointerup', {clientX:50,clientY:900});
+    assert.deepEqual({configuration:h.game.configuration, simulation:h.game.simulation},before);
+  });
   test(`полный цикл ввода: размещение, Reset, перенос, удаление, повтор (${pointerType})`, () => {
     const h = harness(pointerType);
     h.place('planet', -350, -140);

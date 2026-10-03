@@ -72,10 +72,13 @@ export function createInput(game, { canvas, tray, cards, getViewport, isOverTray
     if (drag?.pointerId === event.pointerId) {
       const position = world(event), offset = drag.offset ?? { x: 0, y: 0 };
       cancel();
+      const rect = canvas.getBoundingClientRect();
+      const onMap = event.clientX >= rect.left && event.clientX <= rect.right &&
+        event.clientY >= rect.top && event.clientY <= rect.bottom;
       if (drag.kind === 'new') {
-        if (!overTray(event)) placeBody(game, drag.type, position.x, position.y);
+        if (onMap && !overTray(event)) placeBody(game, drag.type, position.x, position.y);
       } else if (overTray(event)) removeBody(game, drag.type, drag.id);
-      else moveBody(game, drag.type, position.x + offset.x, position.y + offset.y, drag.id);
+      else if (onMap) moveBody(game, drag.type, position.x + offset.x, position.y + offset.y, drag.id);
       changed();
       return;
     }

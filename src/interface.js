@@ -13,14 +13,18 @@ export function createInterface(game, element, input, {
   function closeTray() { tray.hidden = true; expand(toggle, false); }
   function dismiss() {
     cancelLater(timer); cancelLater(fadeTimer);
+    const focused = globalThis.document?.activeElement === overlay;
     overlay.hidden = true; overlay.classList.remove('dissolving');
+    if (focused) info.focus?.({preventScroll:true});
   }
   function showOutcome(result) {
     dismiss();
     element('outcome-title').textContent = result.outcome === 'win' ? 'Победа' : 'Поражение';
     element('outcome-reason').textContent = result.message;
+    overlay.setAttribute('aria-label', `${result.outcome === 'win' ? 'Победа' : 'Поражение'}. ${result.message}. Закрыть сообщение`);
     overlay.classList.toggle('won', result.outcome === 'win');
     overlay.hidden = false;
+    overlay.focus?.({preventScroll:true});
     timer = later(() => {
       if (reducedMotion()) dismiss();
       else {

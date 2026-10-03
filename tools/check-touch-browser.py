@@ -137,6 +137,11 @@ with sync_playwright() as p:
         touch('touchMove', 1, end)
         touch('touchEnd', 1)
 
+    before_ui = state()
+    page.locator('#info').tap()
+    page.locator('#info').tap()
+    assert state()['simulation'] == before_ui['simulation']
+    assert state()['camera'] == before_ui['camera']
     page.locator('#tray-toggle').tap()
     drag(centre('[data-type=planet]'), at(-350, -140))
     assert len(state()['configuration']['placed']) == 1
@@ -173,6 +178,11 @@ with sync_playwright() as p:
     touch('touchEnd', 1)
     assert state()['configuration'] == before
     assert page.evaluate('visualViewport.scale') == 1, 'pinch must zoom the game, not the page'
+    # Other dock buttons must not delete, move or reset the body on drop.
+    before_dock_drop = state()['configuration']
+    drag(at(-310, -120), centre('#reset'))
+    assert state()['configuration'] == before_dock_drop
+    assert state()['simulation']['status'] == 'ready'
     # Returning the planet to the tray removes it; it can be placed again.
     page.locator('#tray-toggle').tap()
     drag(at(-310, -120), centre('#tray-toggle'))
