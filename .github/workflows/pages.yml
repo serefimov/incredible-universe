@@ -1,51 +1,74 @@
-name: Публикация версий игры
+name: Публикация dev и release
 
 on:
   push:
+    branches-ignore:
+      - pages-archive
     tags:
       - 'v*'
 
 permissions:
   contents: read
 
-# Весь сайт обновляется целиком. Выпуски публикуются последовательно.
-concurrency:
-  group: github-pages
-  cancel-in-progress: false
-
 jobs:
-  build:
+  archive:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
           package-manager-cache: false
       - run: npm ci
-      - name: Проверить выпуск и подготовить все версии
+      - run: npm run check
+      - name: Собрать dev и сохранить стабильные выпуски
         env:
-          PAGES_RELEASE_TAG: ${{ github.ref_name }}
+          PAGES_BRANCH: ${{ github.ref_type == 'branch' && github.ref_name || '' }}
+          PAGES_RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           PAGES_MAIN_REF: origin/main
-        run: node tools/build-pages.mjs
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: dist/pages
+        run: node tools/pages-archive.mjs prepare
+      - name: Сохранить сборки без потери параллельных обновлений
+        run: node tools/store-pages-archive.mjs
 
   deploy:
-    needs: build
+    needs: archive
     runs-on: ubuntu-latest
+    # Only deployment is coalesced. Every successful build is already archived.
+    # Read the complete current archive INSIDE this lock, never an older artifact.
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          ref: pages-archive
+          path: archive
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Подготовить общий сайт из текущего архива
+        run: node source/tools/pages-archive.mjs render archive dist/pages
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/pages
       - name: Опубликовать игру
         id: deployment
         uses: actions/deploy-pages@v4

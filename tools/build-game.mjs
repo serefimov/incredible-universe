@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { build } from 'esbuild';
 
 export function validSourcePath(path) {
   return typeof path === 'string' && /^[a-zA-Z0-9_./-]+$/.test(path) &&
@@ -23,6 +22,7 @@ export async function bundleHTML(html, bundle, read) {
   if (source.split(scriptTag).length !== 2 || source.split(styleTag).length !== 2) {
     throw new Error('В HTML ожидается ровно одна ссылка на script и style из release.json');
   }
+  const { build } = await import('esbuild');
   const result = await build({
     entryPoints: [bundle.script], bundle: true, write: false,
     format: 'iife', target: 'es2022', charset: 'utf8', legalComments: 'inline',
@@ -65,3 +65,4 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   await writeFile(destination, html);
   console.log(`Готов standalone HTML: ${destination} (${html.length} байт)`);
 }
+
