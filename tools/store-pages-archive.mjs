@@ -31,7 +31,7 @@ export async function storeArchive(repo, payload, { attempts = 8, remote = 'orig
       await mergeArchive(payload, worktree);
       git(worktree, 'add', '.');
       if (git(worktree, 'diff', '--cached', '--name-only') === '') return;
-      git(worktree, 'commit', '-m', 'сохранил сборки GitHub Pages');
+      git(worktree, 'commit', '-m', '#22 сохранил сборки GitHub Pages');
       try { git(worktree, 'push', remote, `HEAD:refs/heads/${branch}`); return; }
       catch (error) {
         if (attempt === attempts - 1) throw error;
