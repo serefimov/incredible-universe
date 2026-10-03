@@ -101,6 +101,7 @@ export function createInterface(game, element, input, {
   }
   function reset() { dismiss(); seen = null; cancelGesture(); trayOpen(true); element('mission-body').scrollTop = 0; }
   function paint() {
+    element('trayText').hidden = input.state.drag?.kind !== 'new';
     const returning = input.state.drag?.kind === 'existing';
     toggle.classList.toggle('drop-ready', returning);
     element('tray-label').textContent = returning ? 'Вернуть тело' : 'Ящик тел';

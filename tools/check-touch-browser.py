@@ -89,6 +89,8 @@ with sync_playwright() as p:
         assert page.evaluate('getComputedStyle(document.querySelector("canvas")).touchAction') == 'none'
         assert page.evaluate('document.documentElement.scrollWidth') <= width
         assert page.locator('#tray').is_visible()
+        assert page.locator('#trayText').is_hidden()
+        assert page.locator('#tray').bounding_box()['height'] <= 100
         assert page.locator('#mission-panel').is_hidden()
         info_box = page.locator('#info').bounding_box()
         assert info_box['y'] < height / 2
@@ -148,7 +150,14 @@ with sync_playwright() as p:
     assert state()['simulation'] == before_ui['simulation']
     assert state()['camera'] == before_ui['camera']
     page.locator('#tray-toggle').tap()
-    drag(centre('[data-type=planet]'), at(-350, -140))
+    assert page.locator('#trayText').is_hidden()
+    touch('touchStart', 1, centre('[data-type=planet]'))
+    touch('touchMove', 1, at(-350, -140))
+    assert page.locator('#trayText').is_visible()
+    assert page.locator('#trayText').evaluate('(n) => getComputedStyle(n).pointerEvents') == 'none'
+    page.screenshot(path=str(OUTPUT / 'tray-drag-hint.png'))
+    touch('touchEnd', 1)
+    assert page.locator('#trayText').is_hidden()
     assert len(state()['configuration']['placed']) == 1
     camera = state()['camera']
     drag(at(-350, -140), at(-310, -120))
@@ -176,6 +185,7 @@ with sync_playwright() as p:
     touch('touchMove', 1, at(-350, -250))
     touch('touchStart', 2, [280, 400])
     assert state()['drag'] is None
+    assert page.locator('#trayText').is_hidden()
     zoom = state()['camera']['zoom']
     touch('touchMove', 2, [340, 420])
     assert state()['camera']['zoom'] != zoom

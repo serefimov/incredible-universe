@@ -37,6 +37,15 @@ test('i и ящик открываются без записи в физику; 
   assert.deepEqual(h.game,before);assert.equal(h.cancellations(),3);
 });
 
+test('подсказка ящика видна только при переносе нового тела и исчезает после отмены или pinch', () => {
+  const h=harness(),before=structuredClone(h.game);
+  h.ui.paint();assert.equal(h.element('trayText').hidden,true);
+  h.input.state.drag={kind:'new'};h.ui.paint();assert.equal(h.element('trayText').hidden,false);
+  h.input.state.drag=null;h.ui.paint();assert.equal(h.element('trayText').hidden,true);
+  h.input.state.drag={kind:'existing'};h.ui.paint();assert.equal(h.element('trayText').hidden,true);
+  assert.deepEqual(h.game,before);
+});
+
 test('ручка вытягивает ящик вверх, сворачивает вниз и откатывает отменённый жест', () => {
   const h=harness(),handle=h.element('tray-toggle');
   const send=(name,y)=>handle.handlers[name]({pointerId:1,clientY:y,preventDefault(){}});
