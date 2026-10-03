@@ -231,6 +231,37 @@ with sync_playwright() as p:
     page.locator('#follow').tap()
     page.locator('#follow').tap()
     assert state()['camera']['follow'] is True
+    # Navigation mode: tap keeps tracking, drag takes over while flight continues.
+    page.touchscreen.tap(100,220)
+    assert state()['camera']['follow'] is True
+    drag([100,220],[180,260])
+    manual = state()
+    assert manual['camera']['follow'] is False
+    assert manual['configuration'] == initial
+    assert manual['simulation']['status'] == 'running'
+    page.wait_for_timeout(80)
+    assert state()['camera'] == manual['camera'], 'manual camera must not drift back to ship'
+    assert state()['simulation']['shipYears'] > manual['simulation']['shipYears']
+    page.screenshot(path=str(OUTPUT / 'manual-flight-camera.png'))
+    # Pinch and the remaining finger pan only the camera.
+    touch('touchStart',1,[120,220])
+    touch('touchStart',2,[220,220])
+    zoom = state()['camera']['zoom']
+    touch('touchMove',2,[260,220])
+    assert state()['camera']['zoom'] > zoom
+    touch('touchEnd',2)
+    touch('touchMove',1,[130,230])
+    touch('touchEnd',1)
+    assert state()['configuration'] == initial
+    page.locator('#follow').tap()
+    assert state()['camera']['follow'] is True
+    page.mouse.move(150,220)
+    page.mouse.wheel(0,100)
+    page.wait_for_timeout(40)
+    assert state()['camera']['follow'] is False
+    page.locator('#follow').tap()
+    assert state()['camera']['follow'] is True
+    assert state()['simulation']['status'] == 'running'
     page.screenshot(path=str(OUTPUT / 'flight-controls.png'))
     page.locator('#play').tap()
     assert state()['simulation']['status'] == 'ready'

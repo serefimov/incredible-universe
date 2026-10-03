@@ -31,8 +31,9 @@ test('реальный кадровый цикл пропускает фон, о
   assert.equal(game.camera.follow, false, 'centering before launch never starts following');
   assert.equal(game.camera.x, game.simulation.ship.x);
   element('play').handlers.click(); frame(10);
+  game.camera.follow = false;
   element('follow').handlers.click(); element('follow').handlers.click();
-  assert.equal(game.camera.follow, true, 'centering during flight never disables following');
+  assert.equal(game.camera.follow, true, 'centering during flight restores following, repeated clicks keep it');
   assert.equal(game.simulation.steps, 10);
   assert.equal(element('earth-time').textContent, game.simulation.earthYears.toFixed(2));
   assert.equal(element('ship-time').textContent, game.simulation.shipYears.toFixed(2));

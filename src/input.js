@@ -44,7 +44,7 @@ export function createInput(game, { canvas, tray, cards, getViewport, isOverTray
       world: screenToWorld(game.camera, getViewport(), mid.x, mid.y) };
   }
   function move(event) {
-    if (running() || !input.pointers.has(event.pointerId)) return;
+    if (!input.pointers.has(event.pointerId)) return;
     const p = point(event);
     input.pointers.set(event.pointerId, p);
     if (input.pinch) {
@@ -61,6 +61,11 @@ export function createInput(game, { canvas, tray, cards, getViewport, isOverTray
       const position = world(event), offset = input.drag.offset ?? { x: 0, y: 0 };
       Object.assign(input.drag, { x: position.x + offset.x, y: position.y + offset.y });
     } else if (input.pan?.pointerId === event.pointerId) {
+      if (running() && game.camera.follow) {
+        // A tap or finger jitter keeps following; a deliberate drag takes over.
+        if (Math.hypot(p.x - input.pan.last.x, p.y - input.pan.last.y) < 6) return;
+        game.camera.follow = false;
+      }
       game.camera.x -= (p.x - input.pan.last.x) / game.camera.zoom;
       game.camera.y -= (p.y - input.pan.last.y) / game.camera.zoom;
       input.pan.last = p;
@@ -111,12 +116,15 @@ export function createInput(game, { canvas, tray, cards, getViewport, isOverTray
     listen(card);
   }
   canvas.addEventListener('pointerdown', event => {
-    if (running() || input.pointers.size >= 2 || input.pointers.has(event.pointerId)) return;
+    if (input.pointers.size >= 2 || input.pointers.has(event.pointerId)) return;
     event.preventDefault();
     capture(canvas, event.pointerId);
     const p = point(event);
     input.pointers.set(event.pointerId, p);
-    if (input.pointers.size === 2) { beginPinch(); return; }
+    if (input.pointers.size === 2) {
+      if (running()) game.camera.follow = false;
+      beginPinch(); return;
+    }
     let hit = null, distance = 32;
     for (const body of game.simulation.bodies.filter(body => canEditConfiguration(game) && body.user)) {
       const screen = worldToScreen(game.camera, getViewport(), body.x, body.y);
@@ -133,7 +141,7 @@ export function createInput(game, { canvas, tray, cards, getViewport, isOverTray
   listen(canvas);
   canvas.addEventListener('wheel', event => {
     event.preventDefault();
-    if (running()) return;
+    if (running()) game.camera.follow = false;
     const p = point(event), viewport = getViewport();
     const before = screenToWorld(game.camera, viewport, p.x, p.y);
     game.camera.zoom = Math.max(0.22, Math.min(2.8, game.camera.zoom * Math.exp(-event.deltaY * 0.001)));

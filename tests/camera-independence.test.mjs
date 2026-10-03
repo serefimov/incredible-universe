@@ -127,7 +127,14 @@ for (const placements of [[], [['planet', -350, -140]]]) {
       h.nodes.play.handlers.click();
       for (let frame = 0; h.game.simulation.status === 'running'; frame++) {
         assert.ok(frame < 1000);
-        if (moved && frame % 7 === 0) h.nodes.follow.handlers.click();
+        if (moved && frame % 7 === 0) {
+          pan(h); zoom(h);
+          assert.equal(h.game.camera.follow, false);
+          if (frame % 14 === 0) {
+            h.nodes.follow.handlers.click();
+            assert.equal(h.game.camera.follow, true);
+          }
+        }
         h.frame(schedule[frame % schedule.length]);
       }
       assert.equal(h.game.simulation.status, 'collision');

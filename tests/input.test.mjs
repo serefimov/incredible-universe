@@ -245,3 +245,35 @@ test('потеря захвата при pinch освобождает оба у�
   h.place('planet', -350, -140);
   assert.equal(h.game.configuration.placed.length, 1);
 });
+
+for (const pointerType of ['mouse', 'touch']) test(`навигация в полёте: tap сохраняет follow, drag/pinch/wheel отключают, тела не редактируются (${pointerType})`, () => {
+  const h = harness(pointerType); h.place('planet', -350, -140); startGame(h.game);
+  const before = structuredClone({simulation:h.game.simulation,configuration:h.game.configuration});
+  const at = h.worldEvent(-350, -140), camera = structuredClone(h.game.camera);
+  h.canvas.dispatch('pointerdown', at);
+  assert.equal(h.input.state.drag, null, 'flight cannot edit placed body');
+  h.canvas.dispatch('pointermove', {...at,clientX:at.clientX+3});
+  h.canvas.dispatch('pointerup', {...at,clientX:at.clientX+3});
+  assert.deepEqual(h.game.camera,camera,'tap/jitter keeps tracking');
+  h.canvas.dispatch('pointerdown',at);
+  h.canvas.dispatch('pointermove',{...at,clientX:at.clientX+30});
+  assert.equal(h.game.camera.follow,false);
+  assert.ok(Math.abs(h.game.camera.x-(camera.x-30/camera.zoom))<1e-10);
+  h.canvas.dispatch('pointercancel',{});
+  assert.equal(h.input.state.pointers.size,0);
+  assert.equal(h.game.camera.follow,false,'manual view persists after gesture');
+  h.game.camera.follow=true;
+  h.canvas.dispatch('pointerdown',{clientX:100,clientY:300});
+  h.canvas.dispatch('pointerdown',{clientX:200,clientY:300,pointerId:2});
+  assert.equal(h.game.camera.follow,false);
+  const zoom=h.game.camera.zoom;
+  h.canvas.dispatch('pointermove',{clientX:250,clientY:300,pointerId:2});
+  assert.ok(h.game.camera.zoom>zoom);
+  h.canvas.dispatch('pointerup',{pointerId:2});
+  h.canvas.dispatch('pointermove',{clientX:120,clientY:300});
+  h.canvas.dispatch('pointerup',{});
+  h.game.camera.follow=true;
+  h.canvas.dispatch('wheel',{clientX:100,clientY:300,deltaY:100});
+  assert.equal(h.game.camera.follow,false);
+  assert.deepEqual({simulation:h.game.simulation,configuration:h.game.configuration},before);
+});

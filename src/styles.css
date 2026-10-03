@@ -19,6 +19,7 @@ button:focus-visible,#mission-body:focus-visible{outline:2px solid #81e1de;outli
 #play{background:#244c59;border-color:#529595}
 #play.resetting{background:#46354a;border-color:#917797}
 #info{flex:0 0 44px;height:44px;padding:0}#info .symbol{font-family:Georgia,serif;font-weight:bold;font-size:28px}
+#follow.tracking{border-color:#81e1de;background:#18333c}
 #info.has-result{border-color:#95bccc}
 #tray-toggle{width:100%;height:44px;border:0;background:transparent;border-radius:16px 16px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;touch-action:none;user-select:none}
 .handle-line{width:48px;height:4px;background:#8595af;border-radius:4px}#tray-label{font-size:10px;color:#b9c5df}

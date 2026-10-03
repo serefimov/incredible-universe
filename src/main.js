@@ -35,6 +35,7 @@ function updateUI() {
   element('play-label').textContent = ready ? 'Пуск' : 'Сброс';
   play.setAttribute('aria-label', ready ? 'Запустить симуляцию' : 'Сбросить опыт, сохранив расстановку');
   play.classList.toggle('resetting', !ready);
+  follow.classList.toggle('tracking', simulation.status === 'running' && game.camera.follow);
   hint.hidden = simulation.status !== 'ready';
   const display = missionDisplay(game);
   element('mission-heading').textContent = display.heading;
@@ -82,6 +83,7 @@ play.addEventListener('click', () => {
 });
 follow.addEventListener('click', () => {
   input.cancel();
+  game.camera.follow = game.simulation.status === 'running';
   game.camera.x = game.simulation.ship.x;
   game.camera.y = game.simulation.ship.y;
   updateUI();
