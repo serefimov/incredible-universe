@@ -49,7 +49,7 @@ export function createRenderer(canvas, stage) {
       else circle(s.x, s.y, r, '#69a6a1', '#aee1dc');
       ctx.fillStyle = '#aeb9d3'; ctx.font = '10px system-ui';
       ctx.fillText(body.label, s.x + r + 5, s.y - r - 2);
-      if (simulation.status !== 'running' && body.user) {
+      if (simulation.status === 'ready' && body.user) {
         ctx.fillStyle = '#7f8da9'; ctx.fillText('v = 0', s.x + r + 5, s.y + 10);
       }
     }
@@ -72,3 +72,4 @@ export function createRenderer(canvas, stage) {
   }
   return { viewport, resize, draw };
 }
+
