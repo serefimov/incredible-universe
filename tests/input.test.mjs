@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { createGame, resetGame, startGame } from '../src/state.js';
+import { createGame, createGameFromLevel, resetGame, startGame } from '../src/state.js';
 import { advanceFrame } from '../src/physics.js';
 import { worldToScreen } from '../src/camera.js';
 import { createInput } from '../src/input.js';
 
-function harness(pointerType = 'touch') {
-  const game = createGame(), viewport = { width: 1000, height: 694 };
+function harness(pointerType = 'touch', game = createGame()) {
+  const viewport = { width: 1000, height: 694 };
   const stageRect = { left: 0, top: 48, right: 1000, bottom: 742 };
   const trayRect = { left: 0, top: 742, right: 1000, bottom: 844 };
   function element(rect, type) {
@@ -101,3 +102,26 @@ test('hover не создаёт указатель; pinch и колесо мен
   assert.deepEqual(h.game.simulation, before);
   assert.equal(h.input.state.pointers.size, 0);
 });
+
+
+for (const pointerType of ['mouse', 'touch']) {
+  test(`два экземпляра одного типа: перенос второго, удаление первого и повтор (${pointerType})`, () => {
+    const example = JSON.parse(readFileSync(new URL('../levels/mission-examples.json', import.meta.url), 'utf8'))[0];
+    const h = harness(pointerType, createGameFromLevel(example));
+    h.place('planet', -350, -140); h.place('planet', -300, -250);
+    assert.equal(h.game.configuration.placed.length, 2);
+    const first = h.game.configuration.placed[0].id, second = h.game.configuration.placed[1].id;
+    h.place('planet', -200, -300); assert.equal(h.game.configuration.placed.length, 2);
+    h.move([-300, -250], [-270, -250]);
+    assert.ok(Math.abs(h.game.configuration.placed.find(p => p.id === second).x + 270) < 1e-10);
+    assert.equal(h.game.configuration.placed.find(p => p.id === first).x, -350);
+    h.canvas.dispatch('pointerdown', h.worldEvent(-350, -140));
+    h.canvas.dispatch('pointerup', { clientX: 40, clientY: 790 });
+    assert.deepEqual(h.game.configuration.placed.map(p => p.id), [second]);
+    h.place('planet', -350, -140); assert.equal(h.game.configuration.placed.length, 2);
+    const before = structuredClone(h.game.configuration);
+    startGame(h.game); advanceFrame(h.game.simulation, h.game.scenario.physics, 0.01);
+    resetGame(h.game); assert.deepEqual(h.game.configuration, before);
+    assert.equal(startGame(h.game), true);
+  });
+}

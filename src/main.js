@@ -25,7 +25,9 @@ function updateUI() {
   earthTime.textContent = simulation.earthYears.toFixed(2);
   shipTime.textContent = simulation.shipYears.toFixed(2);
   for (const card of cards) {
-    const used = game.configuration.placed.some(p => p.type === card.dataset.type);
+    const spec = game.scenario.tray[card.dataset.type];
+    const used = !spec || game.configuration.placed.filter(p => p.type === card.dataset.type).length >= (spec.count ?? 1);
+    card.hidden = !spec;
     card.classList.toggle('used', used);
     card.setAttribute('aria-disabled', String(used || simulation.status === 'running'));
   }

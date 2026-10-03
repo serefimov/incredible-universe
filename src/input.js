@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { screenToWorld, worldToScreen } from './camera.js';
-import { placeBody, moveBody, removeBody } from './state.js';
+import { placeBody, moveBody, removeBody, availableCount } from './state.js';
 
 export function createInput(game, { canvas, tray, cards, getViewport }, changed) {
   // Gesture previews are UI state. They never write simulation positions.
@@ -45,7 +45,7 @@ export function createInput(game, { canvas, tray, cards, getViewport }, changed)
   for (const card of cards) {
     card.addEventListener('pointerdown', event => {
       const type = card.dataset.type;
-      if (running() || input.drag || game.configuration.placed.some(p => p.type === type)) return;
+      if (running() || input.drag || availableCount(game, type) === 0) return;
       event.preventDefault();
       input.drag = { kind: 'new', type, ...world(event), pointerId: event.pointerId };
       capture(card, event.pointerId);
@@ -114,8 +114,8 @@ export function createInput(game, { canvas, tray, cards, getViewport }, changed)
     if (drag?.kind === 'existing' && drag.pointerId === event.pointerId) {
       const position = world(event);
       cancel();
-      if (overTray(event)) removeBody(game, drag.type);
-      else moveBody(game, drag.type, position.x, position.y);
+      if (overTray(event)) removeBody(game, drag.type, drag.id);
+      else moveBody(game, drag.type, position.x, position.y, drag.id);
       changed();
     }
     input.pointers.delete(event.pointerId);
@@ -138,3 +138,4 @@ export function createInput(game, { canvas, tray, cards, getViewport }, changed)
   }, { passive: false });
   return { state: input, cancel };
 }
+

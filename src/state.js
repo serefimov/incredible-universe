@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { SPIKE_SCENARIO } from './scenario.js';
 import { CLOCK_CONTRACT } from './clocks.js';
+import { loadLevel, initialEarthObserver } from './levels.js';
 
 export function createSimulation(scenario, configuration) {
   return {
@@ -8,12 +9,15 @@ export function createSimulation(scenario, configuration) {
     collisionId: null, collisionFraction: null, error: null,
     clockVersion: CLOCK_CONTRACT.version, earthYears: 0, shipYears: 0,
     earthCorrection: 0, shipCorrection: 0,
-    earthObserver: { ...(scenario.earthClock ?? { x: scenario.ship.x, y: scenario.ship.y, vx: 0, vy: 0 }) },
+    earthObserver: scenario.earthClock?.kind === 'body' ? initialEarthObserver(scenario) :
+      { ...(scenario.earthClock ?? { x: scenario.ship.x, y: scenario.ship.y, vx: 0, vy: 0 }) },
+    ...(scenario.earthClock?.kind === 'body' ? { earthBinding: { bodyId: scenario.earthClock.bodyId,
+      offset: { ...(scenario.earthClock.offset ?? { x: 0, y: 0 }) } } } : {}),
     ship: { ...scenario.ship },
     bodies: [
       ...scenario.bodies.map(body => ({ ...body })),
       ...configuration.placed.map(placement => ({
-        id: `user_${placement.type}`, type: placement.type,
+        id: placement.id ?? `user_${placement.type}`, type: placement.type,
         x: placement.x, y: placement.y, vx: 0, vy: 0,
         m: scenario.tray[placement.type].m, r: scenario.tray[placement.type].r,
         label: scenario.tray[placement.type].label, fixed: false, user: true,
@@ -29,6 +33,17 @@ export function createGame(scenario = SPIKE_SCENARIO) {
     simulation: createSimulation(scenario, configuration),
     camera: { ...scenario.camera, follow: false },
   };
+}
+
+export function createGameFromLevel(input) {
+  const level = loadLevel(input);
+  return { ...createGame(level.universe), level };
+}
+
+export function availableCount(game, type) {
+  const spec = game.scenario.tray[type];
+  if (!spec) return 0;
+  return Math.max(0, (spec.count ?? 1) - game.configuration.placed.filter(p => p.type === type).length);
 }
 
 export function resetGame(game) {
@@ -47,23 +62,34 @@ export function validPlacement(game, type, x, y, ignoreId = null) {
   const spec = game.scenario.tray[type];
   if (!spec || !Number.isFinite(x) || !Number.isFinite(y)) return false;
   const { ship, bodies } = game.simulation;
-  if (Math.hypot(x - ship.x, y - ship.y) < 90) return false;
+  const policy = game.level?.placement;
+  if (policy && !policy.regions.some(region => region.kind === 'circle'
+    ? Math.hypot(x - region.x, y - region.y) <= region.radius
+    : x >= region.xMin && x <= region.xMax && y >= region.yMin && y <= region.yMax)) return false;
+  if (Math.hypot(x - ship.x, y - ship.y) < (policy?.shipClearance ?? 90)) return false;
   return bodies.every(body => body.id === ignoreId ||
-    Math.hypot(x - body.x, y - body.y) >= spec.r + body.r + 12);
+    Math.hypot(x - body.x, y - body.y) >= spec.r + body.r + (policy?.bodyGap ?? 12));
 }
 
 export function placeBody(game, type, x, y) {
-  if (game.simulation.status === 'running' || game.configuration.placed.some(p => p.type === type) ||
+  if (game.simulation.status === 'running' || availableCount(game, type) === 0 ||
       !validPlacement(game, type, x, y)) return false;
-  game.configuration.placed.push({ type, x, y });
+  const placement = { type, x, y };
+  if (game.level) {
+    let index = 1;
+    const candidate = () => `user_${type}${index === 1 ? '' : `_${index}`}`;
+    while (game.configuration.placed.some(p => p.id === candidate())) index++;
+    placement.id = candidate();
+  }
+  game.configuration.placed.push(placement);
   resetGame(game);
   return true;
 }
 
-export function moveBody(game, type, x, y) {
-  const placement = game.configuration.placed.find(p => p.type === type);
+export function moveBody(game, type, x, y, id = null) {
+  const placement = game.configuration.placed.find(p => p.type === type && (id === null || (p.id ?? `user_${p.type}`) === id));
   if (game.simulation.status === 'running' || !placement) return false;
-  if (!validPlacement(game, type, x, y, `user_${type}`)) {
+  if (!validPlacement(game, type, x, y, placement.id ?? `user_${type}`)) {
     resetGame(game);
     return false;
   }
@@ -73,8 +99,8 @@ export function moveBody(game, type, x, y) {
   return true;
 }
 
-export function removeBody(game, type) {
-  const index = game.configuration.placed.findIndex(p => p.type === type);
+export function removeBody(game, type, id = null) {
+  const index = game.configuration.placed.findIndex(p => p.type === type && (id === null || (p.id ?? `user_${p.type}`) === id));
   if (game.simulation.status === 'running' || index === -1) return false;
   game.configuration.placed.splice(index, 1);
   resetGame(game);
