@@ -34,7 +34,7 @@ export function createRenderer(canvas, stage) {
       ctx.setLineDash([5, 5]);
       circle(ts.x, ts.y, target.radius * camera.zoom, '#70e1de0c', '#70e1de');
       ctx.setLineDash([]); ctx.fillStyle = '#70e1de'; ctx.font = '11px system-ui';
-      ctx.fillText('Область цели', ts.x + 8, ts.y - target.radius * camera.zoom - 5);
+      ctx.fillText('Область цели', Math.max(5, Math.min(ts.x + 8, W - 100)), ts.y - target.radius * camera.zoom - 5);
     }
     if (simulation.trail.length > 1) {
       ctx.beginPath();
@@ -56,7 +56,8 @@ export function createRenderer(canvas, stage) {
       else if (body.type === 'planet') circle(s.x, s.y, r, '#7c8fd1', '#c7d1ff');
       else circle(s.x, s.y, r, '#69a6a1', '#aee1dc');
       ctx.fillStyle = '#aeb9d3'; ctx.font = '10px system-ui';
-      ctx.fillText(body.label, s.x + r + 5, s.y - r - 2);
+      const labelWidth = ctx.measureText(body.label)?.width ?? body.label.length * 6;
+      ctx.fillText(body.label, Math.max(5, Math.min(s.x + r + 5, W - labelWidth - 5)), s.y - r - 2);
       if (simulation.status === 'ready' && body.user) {
         ctx.fillStyle = '#7f8da9'; ctx.fillText('v = 0', s.x + r + 5, s.y + 10);
       }
