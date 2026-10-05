@@ -506,6 +506,32 @@ with sync_playwright() as p:
     print('PASS authored campaign embedded into standalone HTML', flush=True)
     assert page.locator('#mission-brief').is_visible()
     assert 'Пуск без планеты' in page.locator('#mission-brief').inner_text()
+    # #37: real mouse cycle through a polygon and an unbounded scene.
+    page.set_viewport_size(dict(width=1280,height=720))
+    for mission, point in [('training-3',(-110,120)), ('training-6',(-100,-165))]:
+        page.goto(url + '/?mission=' + mission)
+        page.wait_for_function('typeof inspectGame === "function"')
+        sx,sy=centre('[data-type=planet]')
+        page.mouse.move(sx,sy);page.mouse.down()
+        page.mouse.move(*at(*point),steps=8);page.mouse.up()
+        assert len(state()['configuration']['placed']) == 1
+        saved=state()['configuration']
+        # Invalid drop near ship returns to the initial position.
+        page.mouse.move(*at(*point));page.mouse.down()
+        ship=state()['simulation']['ship']
+        page.mouse.move(*at(ship['x'],ship['y']),steps=8);page.mouse.up()
+        assert state()['configuration'] == saved
+        page.locator('#play').click()
+        page.wait_for_function('inspectGame().simulation.status === "win"')
+        page.locator('#outcome-overlay').click()
+        page.locator('#play').click()
+        assert state()['configuration'] == saved
+        assert state()['simulation']['shipYears'] == 0
+        page.locator('#follow').click()
+        page.mouse.move(*at(*point));page.mouse.down()
+        page.mouse.move(*centre('#tray-toggle'),steps=8);page.mouse.up()
+        assert not state()['configuration']['placed']
+    print('PASS #37 mouse cycle: polygon and unrestricted placement, invalid move, Win, Reset, return',flush=True)
     # Complete the authored campaign by real touch placements, with normal clocks.
     refs = json.loads((ROOT / 'levels/campaign-solutions.json').read_text())
     authored = json.loads((ROOT / 'levels/campaign.json').read_text())
@@ -514,7 +540,7 @@ with sync_playwright() as p:
     page.wait_for_function('typeof inspectGame === "function"')
     page.locator('#levels').tap()
     assert page.locator('#campaign-list a').count() == 7
-    assert '1 из 7' in page.locator('#campaign-progress').inner_text()
+    assert '3 из 7' in page.locator('#campaign-progress').inner_text()
     for link in page.locator('#campaign-list a').all():
         assert link.bounding_box()['height'] >= 44
     page.screenshot(path=str(OUTPUT / 'campaign-menu.png'))
@@ -549,12 +575,66 @@ with sync_playwright() as p:
             assert page.locator('#campaign-next').is_hidden()
             assert page.locator('#campaign-finished').is_visible()
             assert state()['simulation']['earthYears'] >= 500
-            assert state()['simulation']['shipYears'] <= 200
+            assert state()['simulation']['shipYears'] <= 300
     page.reload()
     page.locator('#levels').tap()
     assert '7 из 7' in page.locator('#campaign-progress').inner_text()
     assert all(link.inner_text().startswith('✓') for link in page.locator('#campaign-list a').all())
     print('PASS seven-level touch campaign, next links, Earth return and stored completion',flush=True)
+    # Final solution must tolerate finger-sized screen errors after an actual pinch.
+    for width,height in [(390,844),(844,390)]:
+        page.set_viewport_size(dict(width=width,height=height))
+        page.goto(url + '/?mission=earth-return')
+        page.wait_for_function('typeof inspectGame === "function"')
+        page.locator('#play').tap()
+        page.wait_for_function('inspectGame().simulation.status !== "running"')
+        assert state()['simulation']['status'] == 'lose'
+        page.locator('#outcome-overlay').tap();page.locator('#play').tap()
+        if page.locator('[data-type=planet]').is_hidden(): page.locator('#tray-toggle').tap()
+        brief=page.locator('#mission-brief').bounding_box()
+        tray=page.locator('#tray-sheet').bounding_box()
+        bottom=tray['y']-10
+        if brief['x'] > width/2:
+            top=page.locator('canvas').bounding_box()['y']+10
+            focus=[width/3,(top+bottom)/2]
+        else:
+            top=brief['y']+brief['height']+10
+            focus=[width/2,(top+bottom)/2]
+        for _ in range(30):
+            point=at(100,3900);dx=focus[0]-point[0];dy=focus[1]-point[1]
+            if abs(dx)<1 and abs(dy)<1: break
+            dy=max(-max(5,(bottom-top)/3),min(max(5,(bottom-top)/3),dy))
+            dx=max(-70,min(70,dx))
+            drag(focus,[focus[0]+dx,focus[1]+dy])
+        point=at(100,3900)
+        touch('touchStart',1,[point[0]-25,point[1]])
+        touch('touchStart',2,[point[0]+25,point[1]])
+        touch('touchMove',1,[point[0]-100,point[1]])
+        touch('touchMove',2,[point[0]+100,point[1]])
+        touch('touchEnd',1);touch('touchEnd',2)
+        assert state()['camera']['zoom'] >= 0.17
+        for index,(dx,dy) in enumerate([(0,0),(-20,-20),(20,20)]):
+            target=at(100,3900)
+            drag(centre('[data-type=planet]'),[target[0]+dx,target[1]+dy])
+            assert len(state()['configuration']['placed']) == 1
+            body=state()['configuration']['placed'][0]
+            assert abs(body['x']-100)<200 and abs(body['y']-3900)<200
+            page.screenshot(path=str(OUTPUT / f'earth-return-finger-{width}x{height}-{index}.png'))
+            page.locator('#play').tap()
+            page.wait_for_function('inspectGame().simulation.status !== "running"')
+            assert state()['simulation']['status'] == 'win'
+            page.locator('#outcome-overlay').tap();page.locator('#play').tap()
+            page.locator('#follow').tap()
+            # Bring the placed body back to the accessible focal point after follow moved the map.
+            for _ in range(40):
+                point=at(body['x'],body['y']);dx=focus[0]-point[0];dy=focus[1]-point[1]
+                if abs(dx)<1 and abs(dy)<1: break
+                dy=max(-max(5,(bottom-top)/3),min(max(5,(bottom-top)/3),dy))
+                dx=max(-70,min(70,dx));pan_start=[focus[0]+80,focus[1]]
+                drag(pan_start,[pan_start[0]+dx,pan_start[1]+dy])
+            drag(at(body['x'],body['y']),centre('#tray-toggle'))
+            assert not state()['configuration']['placed']
+        print(f'PASS Earth return: pinch, finger offsets ±20 CSS px, three wins and removal {width}x{height}',flush=True)
     for width,height in [(320,568),(390,844),(844,390)]:
         page.set_viewport_size(dict(width=width,height=height))
         for level in authored:

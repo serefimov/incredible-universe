@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+import { containsPlacement } from './placement-geometry.js';
 import { SPIKE_SCENARIO } from './scenario.js';
 import { CLOCK_CONTRACT } from './clocks.js';
 import { loadLevel, initialEarthObserver } from './levels.js';
@@ -73,9 +74,7 @@ export function validPlacement(game, type, x, y, ignoreId = null) {
   if (!canEditConfiguration(game) || !spec || trayCount(game, type) === 0 || !Number.isFinite(x) || !Number.isFinite(y)) return false;
   const { ship, bodies } = game.simulation;
   const policy = game.level?.placement;
-  if (policy && !policy.regions.some(region => region.kind === 'circle'
-    ? Math.hypot(x - region.x, y - region.y) <= region.radius
-    : x >= region.xMin && x <= region.xMax && y >= region.yMin && y <= region.yMax)) return false;
+  if (policy && !policy.regions.some(region => containsPlacement(region, x, y))) return false;
   if (Math.hypot(x - ship.x, y - ship.y) < (policy?.shipClearance ?? 90)) return false;
   return bodies.every(body => body.id === ignoreId ||
     Math.hypot(x - body.x, y - body.y) >= spec.r + body.r + (policy?.bodyGap ?? 12));

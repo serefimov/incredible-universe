@@ -4,6 +4,7 @@ import test from 'node:test';
 import { createGameFromLevel, placeBody, moveBody, removeBody, resetGame, startGame } from '../src/state.js';
 import { advanceFrame } from '../src/physics.js';
 import { loadTrainingPlan } from '../src/levels.js';
+import { containsPlacement } from '../src/placement-geometry.js';
 import { earthClockBody } from '../src/clock-display.js';
 
 const data = JSON.parse(readFileSync(new URL('../levels/campaign.json', import.meta.url)));
@@ -39,15 +40,27 @@ test('Первое вмешательство: без планеты реаль�
   assert.equal(earthClockBody(game), null);
 });
 
-test('соседние размещения: 234 положения на сетке 5 мир. ед. над и под курсом выигрывают', () => {
+test('расширенные полигоны: сетка и каждая сторона над и под курсом выигрывают', () => {
   let minimum = Infinity, count = 0;
-  for (const sign of [-1, 1]) for (let x = -140; x <= -80; x += 5) for (let y = 100; y <= 140; y += 5) {
-    const game = solved(x, sign * y);
+  for (let x = -200; x <= -65; x += 5) for (let y = -145; y <= 145; y += 5) {
+    if (!level.placement.regions.some(r => containsPlacement(r, x, y))) continue;
+    const game = solved(x, y);
     minimum = Math.min(minimum, flight(game)); count++;
-    assert.equal(game.simulation.status, 'win', `${x},${sign*y}`);
+    assert.equal(game.simulation.status, 'win', `${x},${y}`);
   }
-  assert.equal(count, 234);
-  assert.ok(minimum > 11, `sampled surface clearance ${minimum}`);
+  assert.equal(count, 430);
+  for (const region of level.placement.regions) for (let edge = 0; edge < region.vertices.length; edge++) {
+    const a = region.vertices[edge], b = region.vertices[(edge + 1) % region.vertices.length];
+    const steps = Math.ceil(Math.hypot(b.x-a.x, b.y-a.y));
+    for (let i = 0; i <= steps; i++) {
+      // Round intermediate edge samples inward to avoid floating point boundary ambiguity.
+      const t = i / steps, inset = i === 0 || i === steps ? 0 : 1e-9;
+      const x = a.x + (b.x-a.x)*t, y = a.y + (b.y-a.y)*t;
+      const game = solved(x + (-130-x)*inset, y + (Math.sign(y)*120-y)*inset);
+      flight(game); assert.equal(game.simulation.status, 'win', `edge ${edge}, ${t}`);
+    }
+  }
+  assert.ok(minimum > 10, `sampled surface clearance ${minimum}`);
 });
 
 test('решение и контрольное столкновение не зависят от кадров; Reset, перенос и удаление воспроизводят цикл', () => {

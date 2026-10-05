@@ -64,18 +64,54 @@
     "placement": {
       "regions": [
         {
-          "kind": "rect",
-          "xMin": -150,
-          "xMax": -20,
-          "yMin": -150,
-          "yMax": -50
+          "kind": "polygon",
+          "vertices": [
+            {
+              "x": -200,
+              "y": -90
+            },
+            {
+              "x": -110,
+              "y": -90
+            },
+            {
+              "x": -65,
+              "y": -120
+            },
+            {
+              "x": -80,
+              "y": -145
+            },
+            {
+              "x": -140,
+              "y": -145
+            }
+          ]
         },
         {
-          "kind": "rect",
-          "xMin": -150,
-          "xMax": -20,
-          "yMin": 50,
-          "yMax": 150
+          "kind": "polygon",
+          "vertices": [
+            {
+              "x": -200,
+              "y": 90
+            },
+            {
+              "x": -110,
+              "y": 90
+            },
+            {
+              "x": -65,
+              "y": 120
+            },
+            {
+              "x": -80,
+              "y": 145
+            },
+            {
+              "x": -140,
+              "y": 145
+            }
+          ]
         }
       ],
       "shipClearance": 45,
@@ -116,7 +152,7 @@
     "schemaVersion": 1,
     "id": "training-2",
     "title": "Гравитационный манёвр",
-    "description": "Проведите корабль в отмеченную область одной планетой.",
+    "description": "Разверните корабль гравитацией планеты и приведите его в область цели позади манёвра.",
     "purpose": "campaign",
     "universe": {
       "id": "lesson-2",
@@ -129,24 +165,11 @@
         "maxFrame": 0.05
       },
       "camera": {
-        "x": -40,
-        "y": 40,
+        "x": -70,
+        "y": 120,
         "zoom": 0.65
       },
-      "bodies": [
-        {
-          "id": "helios",
-          "type": "fixedStar",
-          "x": 70,
-          "y": 0,
-          "vx": 0,
-          "vy": 0,
-          "m": 60,
-          "r": 28,
-          "fixed": true,
-          "label": "Гелиос"
-        }
-      ],
+      "bodies": [],
       "ship": {
         "id": "ship",
         "x": -150,
@@ -177,18 +200,10 @@
     "placement": {
       "regions": [
         {
-          "kind": "rect",
-          "xMin": -150,
-          "xMax": -20,
-          "yMin": -150,
-          "yMax": -50
-        },
-        {
-          "kind": "rect",
-          "xMin": -150,
-          "xMax": -20,
-          "yMin": 50,
-          "yMax": 150
+          "kind": "circle",
+          "x": -10,
+          "y": 120,
+          "radius": 35
         }
       ],
       "shipClearance": 45,
@@ -196,14 +211,14 @@
     },
     "mission": {
       "type": "arrival",
-      "maxCoordinateYears": 700,
+      "maxCoordinateYears": 1000,
       "target": {
         "centre": {
           "kind": "fixed",
-          "x": 15,
-          "y": -110
+          "x": -175,
+          "y": 240
         },
-        "radius": 28
+        "radius": 30
       },
       "limits": {}
     }
@@ -273,18 +288,25 @@
     "placement": {
       "regions": [
         {
-          "kind": "rect",
-          "xMin": -150,
-          "xMax": -20,
-          "yMin": -150,
-          "yMax": -50
-        },
-        {
-          "kind": "rect",
-          "xMin": -150,
-          "xMax": -20,
-          "yMin": 50,
-          "yMax": 150
+          "kind": "polygon",
+          "vertices": [
+            {
+              "x": -150,
+              "y": 90
+            },
+            {
+              "x": -70,
+              "y": 90
+            },
+            {
+              "x": -50,
+              "y": 150
+            },
+            {
+              "x": -155,
+              "y": 150
+            }
+          ]
         }
       ],
       "shipClearance": 45,
@@ -341,6 +363,18 @@
           "r": 28,
           "fixed": true,
           "label": "Гелиос"
+        },
+        {
+          "id": "companion",
+          "type": "planet",
+          "label": "Спутник",
+          "x": -120,
+          "y": -100,
+          "vx": 0,
+          "vy": 15,
+          "m": 15,
+          "r": 10,
+          "fixed": false
         }
       ],
       "ship": {
@@ -374,17 +408,10 @@
       "regions": [
         {
           "kind": "rect",
-          "xMin": 20,
-          "xMax": 150,
-          "yMin": -150,
-          "yMax": -50
-        },
-        {
-          "kind": "rect",
-          "xMin": 20,
-          "xMax": 150,
-          "yMin": 50,
-          "yMax": 150
+          "xMin": 30,
+          "xMax": 160,
+          "yMin": 70,
+          "yMax": 120
         }
       ],
       "shipClearance": 45,
@@ -399,7 +426,7 @@
           "x": -15,
           "y": 110
         },
-        "radius": 28
+        "radius": 45
       },
       "limits": {
         "relativeSpeed": {
@@ -488,18 +515,10 @@
     "placement": {
       "regions": [
         {
-          "kind": "rect",
-          "xMin": -150,
-          "xMax": -20,
-          "yMin": -150,
-          "yMax": -50
-        },
-        {
-          "kind": "rect",
-          "xMin": -150,
-          "xMax": -20,
-          "yMin": 50,
-          "yMax": 150
+          "kind": "circle",
+          "x": -100,
+          "y": -130,
+          "radius": 70
         }
       ],
       "shipClearance": 45,
@@ -529,7 +548,7 @@
     "schemaVersion": 1,
     "id": "training-6",
     "title": "Без подсказок",
-    "description": "Встретьтесь с движущимся Ковчегом с допустимой скоростью и вовремя.",
+    "description": "Самостоятельно выберите место планеты во всей Вселенной и встретьтесь с Ковчегом вовремя, со скоростью не выше 40. Странник заметно меняет полёт.",
     "purpose": "campaign",
     "universe": {
       "id": "lesson-6",
@@ -575,11 +594,11 @@
           "id": "outer",
           "type": "planet",
           "label": "Странник",
-          "x": 220,
-          "y": 140,
-          "vx": 0,
-          "vy": 5,
-          "m": 3,
+          "x": -30,
+          "y": -180,
+          "vx": 15,
+          "vy": 0,
+          "m": 25,
           "r": 8,
           "fixed": false
         }
@@ -614,18 +633,7 @@
     "placement": {
       "regions": [
         {
-          "kind": "rect",
-          "xMin": -150,
-          "xMax": -20,
-          "yMin": -150,
-          "yMax": -50
-        },
-        {
-          "kind": "rect",
-          "xMin": -150,
-          "xMax": -20,
-          "yMin": 50,
-          "yMax": 150
+          "kind": "all"
         }
       ],
       "shipClearance": 45,
@@ -639,11 +647,11 @@
           "kind": "body",
           "bodyId": "destination"
         },
-        "radius": 32
+        "radius": 48
       },
       "limits": {
         "relativeSpeed": {
-          "max": 75
+          "max": 40
         },
         "shipYears": {
           "max": 400
@@ -655,22 +663,22 @@
     "schemaVersion": 1,
     "id": "earth-return",
     "title": "Возвращение на Землю",
-    "description": "Вернитесь в область Земли: не менее 500 лет на Земле, не более 200 на корабле; скорость относительно Земли не выше 300. Разница часов — больше человеческой жизни.",
+    "description": "Массивная планета изменит орбиту корабля. Вернитесь в околопланетную область Земли для автоматической посадки: Земля ≥500 лет, корабль ≤300 лет, скорость относительно Земли ≤300. Для точного размещения увеличьте карту жестом двумя пальцами.",
     "purpose": "campaign",
     "universe": {
       "id": "home",
       "physics": {
         "version": "fixed-euler-swept-v1",
         "gravity": 7200,
-        "softening": 500,
+        "softening": 1500,
         "maxStep": 0.0025,
-        "timeScale": 0.65,
+        "timeScale": 4,
         "maxFrame": 0.05
       },
       "camera": {
         "x": -1000,
-        "y": 500,
-        "zoom": 0.05
+        "y": 1500,
+        "zoom": 0.045
       },
       "bodies": [
         {
@@ -681,37 +689,37 @@
           "y": 0,
           "vx": 0,
           "vy": 0,
-          "m": 145000,
-          "r": 150,
+          "m": 360000,
+          "r": 450,
           "fixed": true
         },
         {
           "id": "earth",
           "type": "planet",
           "label": "Земля",
-          "x": -1497.4421636921297,
-          "y": -87.56121514137013,
-          "vx": 44.99943104278406,
-          "vy": -769.5649869274639,
-          "m": 5,
-          "r": 15,
+          "x": -4157.968485721871,
+          "y": 592.7040338514423,
+          "vx": -101.31629369338368,
+          "vy": -710.7593878344004,
+          "m": 15,
+          "r": 45,
           "fixed": false
         }
       ],
       "ship": {
         "id": "ship",
-        "x": 450,
+        "x": 1950,
         "y": 0,
         "vx": 0,
-        "vy": 833.3910371544328,
+        "vy": 813.5814002555915,
         "m": 0.001,
-        "r": 20,
+        "r": 60,
         "fixed": false
       },
       "tray": {
         "planet": {
-          "m": 1500,
-          "r": 35,
+          "m": 30000,
+          "r": 180,
           "drawR": 13,
           "label": "Планета",
           "count": 1
@@ -722,39 +730,38 @@
         "bodyId": "earth",
         "offset": {
           "x": 0,
-          "y": 15
+          "y": 45
         }
       }
     },
     "placement": {
       "regions": [
         {
-          "kind": "rect",
-          "xMin": -3250,
-          "xMax": 3250,
-          "yMin": -3250,
-          "yMax": 3250
+          "kind": "circle",
+          "x": 0,
+          "y": 0,
+          "radius": 7500
         }
       ],
-      "shipClearance": 100,
-      "bodyGap": 60
+      "shipClearance": 300,
+      "bodyGap": 180
     },
     "mission": {
       "type": "earth-return",
-      "maxCoordinateYears": 2000,
+      "maxCoordinateYears": 5000,
       "target": {
         "centre": {
           "kind": "body",
           "bodyId": "earth"
         },
-        "radius": 1025
+        "radius": 800
       },
       "limits": {
         "earthYears": {
           "min": 500
         },
         "shipYears": {
-          "max": 200
+          "max": 300
         },
         "relativeSpeed": {
           "max": 300
