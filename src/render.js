@@ -63,7 +63,8 @@ export function createRenderer(canvas, stage) {
         ? { ...actual, x: input.drag.x, y: input.drag.y } : actual;
       const s = screen(body.x, body.y);
       if (s.x < -80 || s.x > W + 80 || s.y < -80 || s.y > H + 80) continue;
-      const r = Math.max(5, body.r * Math.sqrt(camera.zoom));
+      // Campaign geometry must stay legible at the larger finale's scale.
+      const r = Math.max(5, body.r * (game.level?.purpose === 'campaign' ? camera.zoom : Math.sqrt(camera.zoom)));
       if (body.type === 'fixedStar' || body.type === 'star') {
         circle(s.x, s.y, r + 7, '#ffb52a22');
         circle(s.x, s.y, r, body.type === 'star' ? '#fff1a8' : '#ffd45a');
@@ -107,4 +108,3 @@ export function createRenderer(canvas, stage) {
   }
   return { viewport, resize, draw };
 }
-

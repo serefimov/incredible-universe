@@ -519,6 +519,7 @@ with sync_playwright() as p:
         assert link.bounding_box()['height'] >= 44
     page.screenshot(path=str(OUTPUT / 'campaign-menu.png'))
     page.locator('#campaign-close').tap()
+    page.locator('#tray-toggle').tap()
     for i in range(1,7):
         level, ref = authored[i], refs[i]
         page.wait_for_function('typeof inspectGame === "function"')
