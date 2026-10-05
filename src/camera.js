@@ -9,9 +9,9 @@ export function screenToWorld(camera, viewport, x, y) {
     y: (y - viewport.height / 2) / camera.zoom + camera.y };
 }
 
-export function zoomAt(camera, viewport, screen, zoom) {
+export function zoomAt(camera, viewport, screen, zoom, minZoom = 0.22) {
   const before = screenToWorld(camera, viewport, screen.x, screen.y);
-  camera.zoom = Math.max(0.22, Math.min(2.8, zoom));
+  camera.zoom = Math.max(minZoom, Math.min(2.8, zoom));
   camera.x = before.x - (screen.x - viewport.width / 2) / camera.zoom;
   camera.y = before.y - (screen.y - viewport.height / 2) / camera.zoom;
 }

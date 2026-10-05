@@ -31,7 +31,7 @@ function dom() {
         preventDefault() {}, ...values }); },
     };
   }
-  const nodes = Object.fromEntries(['c', 'stage', 'tray', 'title', 'training-link', 'mission-brief', 'play', 'play-symbol', 'play-label', 'reset', 'follow', 'status', 'hint', 'earth-time', 'ship-time', 'mission', 'result', 'earth-clock-label', 'earth-clock', 'mission-panel', 'mission-heading', 'mission-body', 'conditions', 'mission-feedback', 'follow-label', 'tray-toggle']
+  const nodes = Object.fromEntries(['info', 'c', 'stage', 'tray', 'title', 'training-link', 'mission-brief', 'play', 'play-symbol', 'play-label', 'reset', 'follow', 'status', 'hint', 'earth-time', 'ship-time', 'mission', 'result', 'earth-clock-label', 'earth-clock', 'mission-panel', 'mission-heading', 'mission-body', 'conditions', 'mission-feedback', 'follow-label', 'tray-toggle']
     .map(id => [id, element(id)]));
   const cards = ['planet', 'giant', 'star'].map(type => element('card', type));
   const document = { hidden: false, getElementById: id => nodes[id], querySelectorAll: () => cards,
@@ -103,7 +103,7 @@ function current(placements) {
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8')
     .replace(/^import .*;$/gm, '');
   vm.runInNewContext(source, { document: h.document, performance: { now: () => now },
-    createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, trayCount, levelFromSearch: () => null, createGame: () => {
+    createCampaignInterface: () => ({update() {},close() {}}), createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, trayCount, levelFromSearch: () => null, createGame: () => {
       game = createGame();
       for (const p of placements) assert.equal(placeBody(game, ...p), true);
       return game;

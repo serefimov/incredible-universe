@@ -46,7 +46,7 @@ export function tutorialHint(game) {
   return `${step.text} Карта: 1 палец; масштаб: 2.`;
 }
 
-// Prepared copy for later authored scenes (#13), never a claim that they exist.
+// Explanations for authored scenes, with Earth clocks only at an actual Earth.
 export function lessonText(game) {
   const lesson = messages.levels[game.level?.id];
   if (!lesson) return '';

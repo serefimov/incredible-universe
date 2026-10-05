@@ -11,8 +11,15 @@
  <div id="top">
   <div id="title">The Incredible Universe</div>
   <div id="status">готово</div>
+  <button id="levels" aria-label="Выбрать уровень" aria-controls="campaign-panel" aria-expanded="false">Уровни</button>
   <button id="info" aria-label="Задание, условия и результат" aria-controls="mission-panel" aria-expanded="false"><span class="symbol">i</span></button>
  </div>
+ <section id="campaign-panel" hidden aria-labelledby="campaign-heading">
+  <header class="sheet-heading"><h2 id="campaign-heading">Кампания</h2><button id="campaign-close" aria-label="Закрыть выбор уровней">×</button></header>
+  <div id="campaign-progress"></div>
+  <nav id="campaign-list" aria-label="Уровни кампании"></nav>
+  <a id="free-scene-link" href="./">Свободная сцена</a>
+ </section>
  <div id="clocks" role="group" aria-label="Время с начала полёта">
   <span id="ship-clock">Корабль: <output id="ship-time">0.00</output> лет</span>
   <span id="earth-clock" hidden><span id="earth-clock-label">Земля:</span> <output id="earth-time">0.00</output> лет</span>
@@ -32,6 +39,11 @@
  <div id="stage">
   <canvas id="c" aria-label="Карта Вселенной"></canvas>
   <div id="mission-brief" hidden aria-label="Краткие условия уровня"></div>
+  <div id="campaign-actions" hidden>
+   <strong id="campaign-finished" hidden>Кампания пройдена!</strong>
+   <a id="campaign-next" hidden></a>
+   <button id="campaign-return">К уровням</button>
+  </div>
  </div>
  <section id="tray-sheet" aria-label="Ящик небесных тел">
   <button id="tray-toggle" aria-label="Свернуть или вытянуть ящик; сюда можно вернуть тело" aria-controls="tray" aria-expanded="true"><span class="handle-line"></span><span id="tray-label">Ящик тел</span></button>

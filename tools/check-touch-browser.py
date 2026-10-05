@@ -506,6 +506,63 @@ with sync_playwright() as p:
     print('PASS authored campaign embedded into standalone HTML', flush=True)
     assert page.locator('#mission-brief').is_visible()
     assert 'Пуск без планеты' in page.locator('#mission-brief').inner_text()
+    # Complete the authored campaign by real touch placements, with normal clocks.
+    refs = json.loads((ROOT / 'levels/campaign-solutions.json').read_text())
+    authored = json.loads((ROOT / 'levels/campaign.json').read_text())
+    page.set_viewport_size(dict(width=390,height=844))
+    page.goto(url + '/?mission=training-2')
+    page.wait_for_function('typeof inspectGame === "function"')
+    page.locator('#levels').tap()
+    assert page.locator('#campaign-list a').count() == 7
+    assert '1 из 7' in page.locator('#campaign-progress').inner_text()
+    for link in page.locator('#campaign-list a').all():
+        assert link.bounding_box()['height'] >= 44
+    page.screenshot(path=str(OUTPUT / 'campaign-menu.png'))
+    page.locator('#campaign-close').tap()
+    for i in range(1,7):
+        level, ref = authored[i], refs[i]
+        page.wait_for_function('typeof inspectGame === "function"')
+        assert page.locator('#title').inner_text() == level['title']
+        assert page.locator('#earth-clock').is_visible() == (i == 6)
+        for body in ref['placements']:
+            drag(centre('[data-type=' + body['type'] + ']'),at(body['x'],body['y']))
+        assert len(state()['configuration']['placed']) == 1, (level['id'],state())
+        page.screenshot(path=str(OUTPUT / ('campaign-' + level['id'] + '-ready.png')))
+        page.locator('#play').tap()
+        page.wait_for_function('inspectGame().simulation.status !== "running"',timeout=45000)
+        assert state()['simulation']['status'] == 'win', (level['id'],state()['simulation'])
+        page.locator('#outcome-overlay').tap()
+        assert page.locator('#campaign-actions').is_visible()
+        page.screenshot(path=str(OUTPUT / ('campaign-' + level['id'] + '-win.png')))
+        if i < 6:
+            page.locator('#campaign-next').tap()
+            page.wait_for_url('**/?mission=' + authored[i+1]['id'])
+        else:
+            assert page.locator('#campaign-next').is_hidden()
+            assert page.locator('#campaign-finished').is_visible()
+            assert state()['simulation']['earthYears'] >= 500
+            assert state()['simulation']['shipYears'] <= 200
+    page.reload()
+    page.locator('#levels').tap()
+    assert '7 из 7' in page.locator('#campaign-progress').inner_text()
+    assert all(link.inner_text().startswith('✓') for link in page.locator('#campaign-list a').all())
+    print('PASS seven-level touch campaign, next links, Earth return and stored completion',flush=True)
+    for width,height in [(320,568),(390,844),(844,390)]:
+        page.set_viewport_size(dict(width=width,height=height))
+        for level in authored:
+            page.goto(url + '/dist/game/index.html?mission=' + level['id'])
+            assert page.locator('#title').inner_text() == level['title']
+            assert page.locator('#mission-brief').is_visible()
+            assert page.locator('#earth-clock').is_visible() == (level['id'] == 'earth-return')
+            assert page.evaluate('document.documentElement.scrollWidth') <= width
+            brief=page.locator('#mission-brief').bounding_box()
+            assert brief['y']+brief['height'] <= page.locator('#tray-sheet').bounding_box()['y']+0.1, (level['id'],width,brief)
+            page.locator('#levels').tap()
+            assert page.locator('#campaign-list a').count() == 7
+            page.locator('#campaign-list a').last.scroll_into_view_if_needed()
+            assert page.locator('#campaign-list a').last.is_visible()
+        page.screenshot(path=str(OUTPUT / f'campaign-menu-{width}x{height}.png'))
+    print('PASS standalone seven levels and campaign layouts in both orientations',flush=True)
     assert not errors, errors
     browser.close()
 server.shutdown()

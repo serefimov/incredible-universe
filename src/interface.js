@@ -29,9 +29,9 @@ export function createInterface(game, element, input, {
     overlay.hidden = true; overlay.classList.remove('dissolving');
     if (focused) info.focus?.({preventScroll:true});
   }
-  function showOutcome(result) {
+  function showOutcome(result, campaignComplete = false) {
     dismiss();
-    element('outcome-title').textContent = result.outcome === 'win' ? 'Победа' : 'Поражение';
+    element('outcome-title').textContent = campaignComplete ? 'Кампания пройдена' : result.outcome === 'win' ? 'Победа' : 'Поражение';
     element('outcome-reason').textContent = result.message;
     overlay.setAttribute('aria-label', `${result.outcome === 'win' ? 'Победа' : 'Поражение'}. ${result.message}. Закрыть сообщение`);
     overlay.classList.toggle('won', result.outcome === 'win');
@@ -92,7 +92,7 @@ export function createInterface(game, element, input, {
   function update(display) {
     if (game.simulation.result && game.simulation.result !== seen) {
       seen = game.simulation.result;
-      closeInfo(); closeTray(); showOutcome(seen);
+      closeInfo(); closeTray(); showOutcome(seen, display.campaignComplete);
     }
     if (!game.simulation.result) seen = null;
     if (display.terminal) info.classList.add('has-result');

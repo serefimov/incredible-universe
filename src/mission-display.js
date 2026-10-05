@@ -15,8 +15,8 @@ function missionBrief(mission) {
   if (mission.type === 'survival') {
     return `Выжить ${mission.survive.years} лет ${briefClocks[mission.survive.clock]} без столкновения.`;
   }
-  const parts = [`Войти в область цели (радиус ${mission.target.radius} мир. ед.) без столкновения`];
-  if (mission.limits.relativeSpeed) parts.push(`скорость относительно цели ${range(mission.limits.relativeSpeed)} мир. ед./ед. времени`);
+  const parts = [`Цель: круг (радиус ${mission.target.radius} мир. ед.), без столкновения`];
+  if (mission.limits.relativeSpeed) parts.push(`скорость относительно цели ${range(mission.limits.relativeSpeed)}`);
   for (const [key, clock] of [['shipYears', 'ship'], ['earthYears', 'earth']]) {
     if (mission.limits[key]) parts.push(`${range(mission.limits[key])} лет ${briefClocks[clock]}`);
   }
