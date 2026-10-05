@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+import { simplePolygon } from './placement-geometry.js';
 import { CLOCK_CONTRACT, clockRate, potentialAt } from './clocks.js';
 
 const fail = (path, reason) => { throw new TypeError(`${path}: ${reason}`); };
@@ -91,6 +92,14 @@ export function loadLevel(input) {
       keys(region, ['kind', 'xMin', 'xMax', 'yMin', 'yMax'], path);
       for (const key of ['xMin', 'xMax', 'yMin', 'yMax']) number(region[key], `${path}.${key}`);
       if (region.xMin >= region.xMax || region.yMin >= region.yMax) fail(path, 'пустая или перевёрнутая область');
+    } else if (region.kind === 'all') {
+      keys(region, ['kind'], path);
+      if (placement.regions.length !== 1) fail(path, 'all должна быть единственной областью');
+    } else if (region.kind === 'polygon') {
+      keys(region, ['kind', 'vertices'], path);
+      if (!Array.isArray(region.vertices) || region.vertices.length < 3) fail(path, 'нужны минимум три вершины');
+      region.vertices.forEach((vertex, j) => { keys(vertex, ['x', 'y'], `${path}.vertices[${j}]`); point(vertex, `${path}.vertices[${j}]`); });
+      if (!simplePolygon(region.vertices)) fail(path, 'нужен простой невырожденный полигон без пересечений');
     } else fail(path, 'неизвестная форма');
   }
   const mission = level.mission;

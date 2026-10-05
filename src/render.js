@@ -36,7 +36,14 @@ export function createRenderer(canvas, stage) {
         if (region.kind === 'circle') {
           const rs = screen(region.x, region.y);
           circle(rs.x, rs.y, region.radius * camera.zoom, '#7badd512', '#7badd599');
-        } else {
+        } else if (region.kind === 'polygon') {
+          ctx.beginPath();
+          region.vertices.forEach((vertex, i) => {
+            const rs = screen(vertex.x, vertex.y);
+            if (i === 0) ctx.moveTo(rs.x, rs.y); else ctx.lineTo(rs.x, rs.y);
+          });
+          ctx.closePath(); ctx.fill(); ctx.stroke();
+        } else if (region.kind === 'rect') {
           const rs = screen(region.xMin, region.yMin);
           const width = (region.xMax - region.xMin) * camera.zoom, height = (region.yMax - region.yMin) * camera.zoom;
           ctx.fillRect(rs.x, rs.y, width, height); ctx.strokeRect(rs.x, rs.y, width, height);
