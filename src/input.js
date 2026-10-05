@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { screenToWorld, worldToScreen } from './camera.js';
+import { screenToWorld, worldToScreen, zoomAt } from './camera.js';
 import { placeBody, moveBody, removeBody, availableCount, canEditConfiguration } from './state.js';
 
 export function createInput(game, { canvas, tray, cards, getViewport, isOverTray }, changed) {
@@ -7,6 +7,7 @@ export function createInput(game, { canvas, tray, cards, getViewport, isOverTray
   const input = { drag: null, pan: null, pinch: null, pointers: new Map() };
   const captures = new Map();
   const running = () => game.simulation.status === 'running';
+  const minZoom = Math.min(0.22, game.scenario.camera.zoom / 2);
   const point = event => {
     const rect = canvas.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
@@ -52,7 +53,7 @@ export function createInput(game, { canvas, tray, cards, getViewport, isOverTray
       const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
       const pinch = input.pinch;
       if (pinch.distance === 0) { beginPinch(); return; }
-      game.camera.zoom = Math.max(0.22, Math.min(2.8,
+      game.camera.zoom = Math.max(minZoom, Math.min(2.8,
         pinch.zoom * Math.hypot(a.x - b.x, a.y - b.y) / pinch.distance));
       const viewport = getViewport();
       game.camera.x = pinch.world.x - (mid.x - viewport.width / 2) / game.camera.zoom;
@@ -143,10 +144,7 @@ export function createInput(game, { canvas, tray, cards, getViewport, isOverTray
     event.preventDefault();
     if (running()) game.camera.follow = false;
     const p = point(event), viewport = getViewport();
-    const before = screenToWorld(game.camera, viewport, p.x, p.y);
-    game.camera.zoom = Math.max(0.22, Math.min(2.8, game.camera.zoom * Math.exp(-event.deltaY * 0.001)));
-    game.camera.x = before.x - (p.x - viewport.width / 2) / game.camera.zoom;
-    game.camera.y = before.y - (p.y - viewport.height / 2) / game.camera.zoom;
+    zoomAt(game.camera, viewport, p, game.camera.zoom * Math.exp(-event.deltaY * 0.001), minZoom);
   }, { passive: false });
   return { state: input, cancel };
 }

@@ -1,0 +1,114 @@
+[
+  {
+    "levelId": "training-1",
+    "placements": [
+      {
+        "type": "planet",
+        "x": -110,
+        "y": -120
+      }
+    ],
+    "failurePlacements": [],
+    "failureReason": "collision",
+    "tolerance": {
+      "halfSpan": 5,
+      "step": 2.5
+    }
+  },
+  {
+    "levelId": "training-2",
+    "placements": [
+      {
+        "type": "planet",
+        "x": -110,
+        "y": -120
+      }
+    ],
+    "failurePlacements": [],
+    "failureReason": "collision",
+    "tolerance": {
+      "halfSpan": 5,
+      "step": 2.5
+    }
+  },
+  {
+    "levelId": "training-3",
+    "placements": [
+      {
+        "type": "planet",
+        "x": -110,
+        "y": 120
+      }
+    ],
+    "failurePlacements": [],
+    "failureReason": "collision",
+    "tolerance": {
+      "halfSpan": 5,
+      "step": 2.5
+    }
+  },
+  {
+    "levelId": "training-4",
+    "placements": [
+      {
+        "type": "planet",
+        "x": 110,
+        "y": 120
+      }
+    ],
+    "failurePlacements": [],
+    "failureReason": "ship-deadline",
+    "tolerance": {
+      "halfSpan": 5,
+      "step": 2.5
+    }
+  },
+  {
+    "levelId": "training-5",
+    "placements": [
+      {
+        "type": "planet",
+        "x": -100,
+        "y": -120
+      }
+    ],
+    "failurePlacements": [],
+    "failureReason": "collision",
+    "tolerance": {
+      "halfSpan": 5,
+      "step": 2.5
+    }
+  },
+  {
+    "levelId": "training-6",
+    "placements": [
+      {
+        "type": "planet",
+        "x": -100,
+        "y": -120
+      }
+    ],
+    "failurePlacements": [],
+    "failureReason": "collision",
+    "tolerance": {
+      "halfSpan": 5,
+      "step": 2.5
+    }
+  },
+  {
+    "levelId": "earth-return",
+    "placements": [
+      {
+        "type": "planet",
+        "x": -3000,
+        "y": 0
+      }
+    ],
+    "failurePlacements": [],
+    "failureReason": "ship-deadline",
+    "tolerance": {
+      "halfSpan": 100,
+      "step": 25
+    }
+  }
+]

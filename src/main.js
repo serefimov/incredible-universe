@@ -9,6 +9,7 @@ import { earthClockBody } from './clock-display.js';
 import { missionDisplay } from './mission-display.js';
 import { createInterface } from './interface.js';
 import { trayCount } from './tutorial.js';
+import { createCampaignInterface } from './campaign.js';
 
 const element = id => document.getElementById(id);
 const canvas = element('c'), stage = element('stage');
@@ -41,6 +42,10 @@ function updateUI() {
   follow.classList.toggle('tracking', simulation.status === 'running' && game.camera.follow);
   hint.hidden = simulation.status !== 'ready';
   const display = missionDisplay(game);
+  element('speed-meter').textContent = display.speed;
+  element('speed-meter').classList.toggle('within-limit', display.speedMet === true);
+  element('speed-meter').classList.toggle('outside-limit', display.speedMet === false);
+  display.campaignComplete = campaignUI.update();
   element('mission-brief').textContent = [ready ? display.brief : '', display.tutorial].filter(Boolean).join('\n');
   element('mission-brief').hidden = !(ready && display.brief) && !display.tutorial;
   element('mission-heading').textContent = display.heading;
@@ -74,9 +79,15 @@ const input = createInput(game, { canvas, tray: element('tray'), cards,
   }),
   getViewport: () => renderer.viewport }, updateUI);
 ui = createInterface(game, element, input);
+const campaignUI = createCampaignInterface(game, element, { onOpen: () => {
+  input.cancel(); ui.closeInfo(); ui.closeTray(); ui.dismiss();
+} });
+element('info').addEventListener('click', () => campaignUI.close());
+element('tray-toggle').addEventListener('pointerdown', () => campaignUI.close());
 let last = 0;
 play.addEventListener('click', () => {
   input.cancel();
+  campaignUI.close();
   if (game.simulation.status === 'ready') {
     ui.closeTray(); ui.closeInfo(); ui.dismiss();
     if (startGame(game)) last = performance.now();

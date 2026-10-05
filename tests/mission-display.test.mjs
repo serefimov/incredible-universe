@@ -39,6 +39,8 @@ test('показания движущейся цели и дробного ре�
   const display = missionDisplay(game);
   assert.match(display.conditions,/✓ До центра цели «Земля»: ≈1.00/);
   assert.match(display.result,/Скорость относительно цели: ≈10.00/);
+  assert.equal(display.speed,'Относительная скорость: ≈10.00 · ✓ ≤ 10');
+  assert.equal(display.speedMet,true);
   assert.match(display.result,/Земля: ≈90.00/);
   assert.match(display.result,/Корабль: ≈89.98/);
   assert.deepEqual(game,before,'UI cannot mutate physical state');
@@ -65,6 +67,8 @@ test('округлённое совпадение с пределом не вы�
   const display=missionDisplay(game);
   assert.match(display.conditions,/○ Часы корабля: ≈100.00; нужно ≥ 100/);
   assert.match(display.conditions,/○ Скорость относительно цели: ≈10.00; нужно ≤ 10/);
+  assert.equal(display.speedMet,false);
+  assert.match(display.speed,/≈10.00 · ○ ≤ 10/);
 });
 
 test('Земля не появляется в свободной сцене или инерциальном примере, ошибка не называется поражением', () => {

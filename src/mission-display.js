@@ -15,8 +15,8 @@ function missionBrief(mission) {
   if (mission.type === 'survival') {
     return `Выжить ${mission.survive.years} лет ${briefClocks[mission.survive.clock]} без столкновения.`;
   }
-  const parts = [`Войти в область цели (радиус ${mission.target.radius} мир. ед.) без столкновения`];
-  if (mission.limits.relativeSpeed) parts.push(`скорость относительно цели ${range(mission.limits.relativeSpeed)} мир. ед./ед. времени`);
+  const parts = [`Цель: круг (радиус ${mission.target.radius} мир. ед.), без столкновения`];
+  if (mission.limits.relativeSpeed) parts.push(`скорость относительно цели ${range(mission.limits.relativeSpeed)}`);
   for (const [key, clock] of [['shipYears', 'ship'], ['earthYears', 'earth']]) {
     if (mission.limits[key]) parts.push(`${range(mission.limits[key])} лет ${briefClocks[clock]}`);
   }
@@ -26,6 +26,11 @@ function missionBrief(mission) {
 // Read only the committed physical state. Rounding is presentation, never a decision.
 export function missionDisplay(game) {
   const s = game.simulation, mission = s.mission;
+  const speed = mission?.target ? arrivalSpeed(mission.target, s) : Math.hypot(s.ship.vx, s.ship.vy);
+  const speedLimit = mission?.limits?.relativeSpeed;
+  const speedMet = speedLimit ? inRange(speed, speedLimit) : null;
+  const speedText = `${mission?.target ? 'Относительная скорость' : 'Скорость корабля'}: ${number(speed)}` +
+    (speedLimit ? ` · ${speedMet ? '✓' : '○'} ${range(speedLimit)}` : '');
   const earth = Boolean(earthClockBody(game));
   const rows = [], missing = [], values = [];
   let insideTarget = false;
@@ -82,7 +87,7 @@ export function missionDisplay(game) {
       : '💥 Столкновение. Полёт остановлен.';
     result += `\n${values.join('\n')}\nНажмите ↻ для новой попытки.`;
   }
-  return { tutorial: tutorialHint(game), brief: missionBrief(mission),
+  return { speed: speedText, speedMet, tutorial: tutorialHint(game), brief: missionBrief(mission),
     goal: game.level ? [game.level.title, game.level.description, lessonText(game)].filter(Boolean).join('\n') : '',
     conditions: rows.join('\n'), feedback, result, terminal: Boolean(result),
     heading: s.status === 'win' ? '✓ Победа — условия и результат' :

@@ -41,7 +41,8 @@
       "introduces": "target-region",
       "showFutureTrajectory": false,
       "showMotionVector": true,
-      "steps": []
+      "steps": [],
+      "campaignLevel": "training-2"
     },
     {
       "id": "training-3",
@@ -52,7 +53,8 @@
       "introduces": "relative-arrival-speed",
       "showFutureTrajectory": false,
       "showMotionVector": true,
-      "steps": []
+      "steps": [],
+      "campaignLevel": "training-3"
     },
     {
       "id": "training-4",
@@ -64,7 +66,8 @@
       "showFutureTrajectory": false,
       "showMotionVector": true,
       "steps": [],
-      "deadlineClock": "ship"
+      "deadlineClock": "ship",
+      "campaignLevel": "training-4"
     },
     {
       "id": "training-5",
@@ -76,7 +79,8 @@
       "showFutureTrajectory": false,
       "showMotionVector": true,
       "steps": [],
-      "deadlineClock": "ship"
+      "deadlineClock": "ship",
+      "campaignLevel": "training-5"
     },
     {
       "id": "training-6",
@@ -88,7 +92,8 @@
       "showFutureTrajectory": false,
       "showMotionVector": true,
       "steps": [],
-      "deadlineClock": "ship"
+      "deadlineClock": "ship",
+      "campaignLevel": "training-6"
     }
   ]
 }
