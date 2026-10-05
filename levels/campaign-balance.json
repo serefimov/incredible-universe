@@ -1,23 +1,23 @@
 {
-  "campaignSha256": "c1d03769f9caf88bfd984995c2f141e6a756abeb60ac57e3e7849b6617673111",
+  "campaignSha256": "f033bd259d6d585d9bf291cdbf69ad194c520d93d2e244e896f9bea76124e8e2",
   "method": "closed lattice inside valid placement union; first step 1, others 5; area estimates are counts times step squared, not exact areas or continuous proofs",
   "measurements": [
     {
       "levelId": "training-1",
       "step": 1,
       "bounds": {
-        "xMin": -130,
-        "xMax": -90,
-        "yMin": -140,
-        "yMax": 140
+        "xMin": -200,
+        "xMax": -65,
+        "yMin": -145,
+        "yMax": 145
       },
-      "allowed": 2514,
-      "wins": 2514,
+      "allowed": 10002,
+      "wins": 10002,
       "errors": 0,
       "winningFraction": 1,
-      "allowedAreaEstimate": 2514,
-      "winningAreaEstimate": 2514,
-      "minimumWinningClearance": 21.85673675357893
+      "allowedAreaEstimate": 10002,
+      "winningAreaEstimate": 10002,
+      "minimumWinningClearance": 13.089257539675586
     },
     {
       "levelId": "training-2",
@@ -85,7 +85,7 @@
       "winningFraction": 0.11921708185053381,
       "allowedAreaEstimate": 14050,
       "winningAreaEstimate": 1675,
-      "minimumWinningClearance": 0.18727239684745456
+      "minimumWinningClearance": 0.18727239684743324
     }
   ]
 }
