@@ -1,0 +1,91 @@
+{
+  "campaignSha256": "0a8554eecb3b193e31710177387ae3cccfc9b09ea517bfd20c2f7635d5732595",
+  "method": "closed lattice inside valid placement union; first step 1, others 5; area estimates are counts times step squared, not exact areas or continuous proofs",
+  "measurements": [
+    {
+      "levelId": "training-1",
+      "step": 1,
+      "bounds": {
+        "xMin": -130,
+        "xMax": -90,
+        "yMin": -140,
+        "yMax": 140
+      },
+      "allowed": 2514,
+      "wins": 2514,
+      "errors": 0,
+      "winningFraction": 1,
+      "allowedAreaEstimate": 2514,
+      "winningAreaEstimate": 2514,
+      "minimumWinningClearance": 21.85673675357893
+    },
+    {
+      "levelId": "training-2",
+      "step": 5,
+      "bounds": {
+        "xMin": -45,
+        "xMax": 25,
+        "yMin": 85,
+        "yMax": 155
+      },
+      "allowed": 149,
+      "wins": 90,
+      "errors": 0,
+      "winningFraction": 0.6040268456375839,
+      "allowedAreaEstimate": 3725,
+      "winningAreaEstimate": 2250,
+      "minimumWinningClearance": 5.43827136909653
+    },
+    {
+      "levelId": "training-3",
+      "step": 5,
+      "bounds": {
+        "xMin": -170,
+        "xMax": 0,
+        "yMin": 60,
+        "yMax": 170
+      },
+      "allowed": 693,
+      "wins": 75,
+      "errors": 0,
+      "winningFraction": 0.10822510822510822,
+      "allowedAreaEstimate": 17325,
+      "winningAreaEstimate": 1875,
+      "minimumWinningClearance": 0.47985050443821464
+    },
+    {
+      "levelId": "training-4",
+      "step": 5,
+      "bounds": {
+        "xMin": 20,
+        "xMax": 200,
+        "yMin": 40,
+        "yMax": 190
+      },
+      "allowed": 1138,
+      "wins": 54,
+      "errors": 0,
+      "winningFraction": 0.04745166959578207,
+      "allowedAreaEstimate": 28450,
+      "winningAreaEstimate": 1350,
+      "minimumWinningClearance": 0.11608583431600827
+    },
+    {
+      "levelId": "training-5",
+      "step": 5,
+      "bounds": {
+        "xMin": -250,
+        "xMax": 190,
+        "yMin": -220,
+        "yMax": 220
+      },
+      "allowed": 5396,
+      "wins": 70,
+      "errors": 0,
+      "winningFraction": 0.012972572275759823,
+      "allowedAreaEstimate": 134900,
+      "winningAreaEstimate": 1750,
+      "minimumWinningClearance": 0.18727239684745456
+    }
+  ]
+}

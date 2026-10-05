@@ -20,12 +20,12 @@
     "placements": [
       {
         "type": "planet",
-        "x": -110,
-        "y": -120
+        "x": -10,
+        "y": 120
       }
     ],
     "failurePlacements": [],
-    "failureReason": "collision",
+    "failureReason": "horizon",
     "tolerance": {
       "halfSpan": 5,
       "step": 2.5
@@ -52,12 +52,12 @@
     "placements": [
       {
         "type": "planet",
-        "x": 110,
-        "y": 120
+        "x": 75,
+        "y": 95
       }
     ],
     "failurePlacements": [],
-    "failureReason": "ship-deadline",
+    "failureReason": "collision",
     "tolerance": {
       "halfSpan": 5,
       "step": 2.5
@@ -85,7 +85,7 @@
       {
         "type": "planet",
         "x": -100,
-        "y": -120
+        "y": -165
       }
     ],
     "failurePlacements": [],
@@ -100,15 +100,15 @@
     "placements": [
       {
         "type": "planet",
-        "x": -3000,
-        "y": 0
+        "x": 500,
+        "y": -4130
       }
     ],
     "failurePlacements": [],
     "failureReason": "ship-deadline",
     "tolerance": {
-      "halfSpan": 100,
-      "step": 25
+      "halfSpan": 25,
+      "step": 5
     }
   }
 ]

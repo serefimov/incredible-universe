@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { campaign, solutions, campaignFlight } from '../tools/check-campaign.mjs';
 import { createCampaignProgress, nextCampaignLevel } from '../src/campaign.js';
-import { createGameFromLevel, placeBody, resetGame, startGame } from '../src/state.js';
-import { advanceFrame } from '../src/physics.js';
+import { createSimulation, createGameFromLevel, placeBody, resetGame, startGame } from '../src/state.js';
+import { advanceFrame, stepSimulation } from '../src/physics.js';
 import { earthClockBody } from '../src/clock-display.js';
 
 for (const level of campaign) test(`${level.id}: solution, failure, placement tolerance and Reset`, () => {
@@ -11,6 +11,7 @@ for (const level of campaign) test(`${level.id}: solution, failure, placement to
   assert.ok(ref, 'authored reference exists');
   const {game,measurement} = campaignFlight(level,ref.placements);
   assert.equal(measurement.status,'win');
+  if (level.id === 'training-2') assert.ok(measurement.headingCosine < -0.94, 'arrival travels opposite the starting direction');
   assert.ok(measurement.clearance > 0);
   assert.ok(measurement.maxSpeed < 1000);
   assert.equal(Boolean(earthClockBody(game)),level.id === 'earth-return');
@@ -34,7 +35,7 @@ for (const level of campaign) test(`${level.id}: solution, failure, placement to
     const earth=game.simulation.bodies.find(b=>b.id==='earth');
     assert.equal(earth.fixed,false);
     assert.equal(game.scenario.earthClock.bodyId,'earth');
-    assert.ok(measurement.unmetEntries > 0,'early entry continues until both clocks fit');
+    assert.ok(level.mission.target.radius <= 350, 'compact Earth arrival');
   }
 });
 
@@ -77,4 +78,21 @@ test('progress requires actual wins, restores valid IDs, and survives storage fa
   assert.equal(nextCampaignLevel(campaign[0].id).id,campaign[1].id);
   assert.equal(nextCampaignLevel(campaign.at(-1).id),null);
   assert.equal(nextCampaignLevel('example-survival'),null);
+});
+
+
+test('new companion bodies change the flight and invalidate the previous reference placements', () => {
+  for (const [index, oldPlacement] of [[3,{type:'planet',x:110,y:120}], [5,{type:'planet',x:-100,y:-120}]]) {
+    const level=campaign[index];
+    assert.equal(campaignFlight(level,[oldPlacement]).measurement.status,'lose');
+    const without=structuredClone(level);without.universe.bodies.pop();
+    const games=[level,without].map(l=>{
+      const g=createGameFromLevel(l,{tutorial:false});
+      const p=solutions[index].placements[0];assert.equal(placeBody(g,p.type,p.x,p.y),true);g.simulation=createSimulation(g.scenario,g.configuration);startGame(g);
+      for(let tick=0;tick<1000;tick++) stepSimulation(g.simulation,g.scenario.physics);
+      return g;
+    });
+    const [a,b]=games.map(g=>g.simulation.ship);
+    assert.ok(Math.hypot(a.x-b.x,a.y-b.y)>5, 'existing planet materially deflects the ship');
+  }
 });

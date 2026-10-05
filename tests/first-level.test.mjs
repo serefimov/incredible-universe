@@ -4,6 +4,7 @@ import test from 'node:test';
 import { createGameFromLevel, placeBody, moveBody, removeBody, resetGame, startGame } from '../src/state.js';
 import { advanceFrame } from '../src/physics.js';
 import { loadTrainingPlan } from '../src/levels.js';
+import { containsPlacement } from '../src/placement-geometry.js';
 import { earthClockBody } from '../src/clock-display.js';
 
 const data = JSON.parse(readFileSync(new URL('../levels/campaign.json', import.meta.url)));
@@ -39,14 +40,21 @@ test('Первое вмешательство: без планеты реаль�
   assert.equal(earthClockBody(game), null);
 });
 
-test('соседние размещения: 234 положения на сетке 5 мир. ед. над и под курсом выигрывают', () => {
+test('соседние размещения: круглые зоны: сетка и границы над и под курсом выигрывают', () => {
   let minimum = Infinity, count = 0;
   for (const sign of [-1, 1]) for (let x = -140; x <= -80; x += 5) for (let y = 100; y <= 140; y += 5) {
+    if (!level.placement.regions.some(r => containsPlacement(r, x, sign*y))) continue;
     const game = solved(x, sign * y);
     minimum = Math.min(minimum, flight(game)); count++;
     assert.equal(game.simulation.status, 'win', `${x},${sign*y}`);
   }
-  assert.equal(count, 234);
+  assert.equal(count, 98);
+  for (const region of level.placement.regions) for (let angle=0;angle<360;angle+=5) {
+    // Round inward to avoid a trig-rounded point microscopically outside a closed circle.
+    const radians=angle*Math.PI/180, radius=region.radius-1e-10;
+    const game=solved(region.x+radius*Math.cos(radians), region.y+radius*Math.sin(radians));
+    flight(game); assert.equal(game.simulation.status, 'win');
+  }
   assert.ok(minimum > 11, `sampled surface clearance ${minimum}`);
 });
 

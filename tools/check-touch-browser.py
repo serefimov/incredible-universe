@@ -506,6 +506,32 @@ with sync_playwright() as p:
     print('PASS authored campaign embedded into standalone HTML', flush=True)
     assert page.locator('#mission-brief').is_visible()
     assert 'Пуск без планеты' in page.locator('#mission-brief').inner_text()
+    # #37: real mouse cycle through a polygon and an unbounded scene.
+    page.set_viewport_size(dict(width=1280,height=720))
+    for mission, point in [('training-3',(-110,120)), ('training-6',(-100,-165))]:
+        page.goto(url + '/?mission=' + mission)
+        page.wait_for_function('typeof inspectGame === "function"')
+        sx,sy=centre('[data-type=planet]')
+        page.mouse.move(sx,sy);page.mouse.down()
+        page.mouse.move(*at(*point),steps=8);page.mouse.up()
+        assert len(state()['configuration']['placed']) == 1
+        saved=state()['configuration']
+        # Invalid drop near ship returns to the initial position.
+        page.mouse.move(*at(*point));page.mouse.down()
+        ship=state()['simulation']['ship']
+        page.mouse.move(*at(ship['x'],ship['y']),steps=8);page.mouse.up()
+        assert state()['configuration'] == saved
+        page.locator('#play').click()
+        page.wait_for_function('inspectGame().simulation.status === "win"')
+        page.locator('#outcome-overlay').click()
+        page.locator('#play').click()
+        assert state()['configuration'] == saved
+        assert state()['simulation']['shipYears'] == 0
+        page.locator('#follow').click()
+        page.mouse.move(*at(*point));page.mouse.down()
+        page.mouse.move(*centre('#tray-toggle'),steps=8);page.mouse.up()
+        assert not state()['configuration']['placed']
+    print('PASS #37 mouse cycle: polygon and unrestricted placement, invalid move, Win, Reset, return',flush=True)
     # Complete the authored campaign by real touch placements, with normal clocks.
     refs = json.loads((ROOT / 'levels/campaign-solutions.json').read_text())
     authored = json.loads((ROOT / 'levels/campaign.json').read_text())
@@ -514,7 +540,7 @@ with sync_playwright() as p:
     page.wait_for_function('typeof inspectGame === "function"')
     page.locator('#levels').tap()
     assert page.locator('#campaign-list a').count() == 7
-    assert '1 из 7' in page.locator('#campaign-progress').inner_text()
+    assert '3 из 7' in page.locator('#campaign-progress').inner_text()
     for link in page.locator('#campaign-list a').all():
         assert link.bounding_box()['height'] >= 44
     page.screenshot(path=str(OUTPUT / 'campaign-menu.png'))
