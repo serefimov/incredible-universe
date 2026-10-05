@@ -29,13 +29,13 @@ for (const level of campaign) test(`${level.id}: solution, failure, placement to
   assert.equal(game.simulation.shipYears,0);
   assert.equal(game.simulation.earthYears,0);
   if (level.id === 'earth-return') {
-    assert.ok(measurement.earthYears >= 500 && measurement.shipYears <= 200);
-    assert.ok(measurement.earthYears-measurement.shipYears >= 300);
-    assert.ok(measurement.earthYears/measurement.shipYears >= 2.5);
+    assert.ok(measurement.earthYears >= 500 && measurement.shipYears <= 300);
+    assert.ok(measurement.earthYears-measurement.shipYears >= 200);
+    assert.ok(measurement.earthYears/measurement.shipYears >= 5/3);
     const earth=game.simulation.bodies.find(b=>b.id==='earth');
     assert.equal(earth.fixed,false);
     assert.equal(game.scenario.earthClock.bodyId,'earth');
-    assert.ok(level.mission.target.radius <= 350, 'compact Earth arrival');
+    assert.ok(level.mission.target.radius / earth.r < 18, 'compact arrival relative to Earth size');
   }
 });
 
@@ -95,4 +95,27 @@ test('new companion bodies change the flight and invalidate the previous referen
     const [a,b]=games.map(g=>g.simulation.ship);
     assert.ok(Math.hypot(a.x-b.x,a.y-b.y)>5, 'existing planet materially deflects the ship');
   }
+});
+
+test('Earth return: added planet visibly stretches the orbit instead of only changing the result', () => {
+  const level=campaign.at(-1), ref=solutions.at(-1).placements[0];
+  const games=[false,true].map(placed=>{
+    const g=createGameFromLevel(level,{tutorial:false});
+    if(placed) assert.equal(placeBody(g,ref.type,ref.x,ref.y),true);
+    assert.equal(startGame(g),true);return g;
+  });
+  const radii=games.map(()=>({min:Infinity,max:0}));let maximumSeparation=0;
+  for(let tick=0;tick<5200;tick++) {
+    for(let i=0;i<2;i++) {
+      const g=games[i];stepSimulation(g.simulation,g.scenario.physics);
+      assert.equal(g.simulation.status,'running');
+      const r=Math.hypot(g.simulation.ship.x,g.simulation.ship.y);
+      radii[i].min=Math.min(radii[i].min,r);radii[i].max=Math.max(radii[i].max,r);
+    }
+    const [a,b]=games.map(g=>g.simulation.ship);
+    maximumSeparation=Math.max(maximumSeparation,Math.hypot(a.x-b.x,a.y-b.y));
+  }
+  assert.ok(radii[0].max-radii[0].min < 5, 'baseline remains nearly circular');
+  assert.ok(radii[1].max-radii[1].min > 450, 'planet creates a clearly elongated orbit');
+  assert.ok(maximumSeparation > 550, 'deflection is visible even in the overview');
 });

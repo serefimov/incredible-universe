@@ -100,15 +100,15 @@
     "placements": [
       {
         "type": "planet",
-        "x": 500,
-        "y": -4130
+        "x": 100,
+        "y": 3900
       }
     ],
     "failurePlacements": [],
     "failureReason": "ship-deadline",
     "tolerance": {
-      "halfSpan": 25,
-      "step": 5
+      "halfSpan": 200,
+      "step": 25
     }
   }
 ]

@@ -663,22 +663,22 @@
     "schemaVersion": 1,
     "id": "earth-return",
     "title": "Возвращение на Землю",
-    "description": "Вернитесь в околопланетную область Земли для автоматической посадки: Земля ≥500 лет, корабль ≤200 лет, скорость относительно Земли ≤300.",
+    "description": "Массивная планета изменит орбиту корабля. Вернитесь в околопланетную область Земли для автоматической посадки: Земля ≥500 лет, корабль ≤300 лет, скорость относительно Земли ≤300. Для точного размещения увеличьте карту жестом двумя пальцами.",
     "purpose": "campaign",
     "universe": {
       "id": "home",
       "physics": {
         "version": "fixed-euler-swept-v1",
         "gravity": 7200,
-        "softening": 500,
+        "softening": 1500,
         "maxStep": 0.0025,
         "timeScale": 4,
         "maxFrame": 0.05
       },
       "camera": {
-        "x": 0,
-        "y": -1400,
-        "zoom": 0.055
+        "x": -1000,
+        "y": 1500,
+        "zoom": 0.045
       },
       "bodies": [
         {
@@ -689,37 +689,37 @@
           "y": 0,
           "vx": 0,
           "vy": 0,
-          "m": 178000,
-          "r": 150,
+          "m": 360000,
+          "r": 450,
           "fixed": true
         },
         {
           "id": "earth",
           "type": "planet",
           "label": "Земля",
-          "x": 594.3325364549537,
-          "y": 925.6180832886862,
-          "vx": -788.9390233451777,
-          "vy": 506.5719213123812,
-          "m": 5,
-          "r": 15,
+          "x": -4157.968485721871,
+          "y": 592.7040338514423,
+          "vx": -101.31629369338368,
+          "vy": -710.7593878344004,
+          "m": 15,
+          "r": 45,
           "fixed": false
         }
       ],
       "ship": {
         "id": "ship",
-        "x": 750,
+        "x": 1950,
         "y": 0,
         "vx": 0,
-        "vy": 992.1332062658865,
+        "vy": 813.5814002555915,
         "m": 0.001,
-        "r": 20,
+        "r": 60,
         "fixed": false
       },
       "tray": {
         "planet": {
-          "m": 200,
-          "r": 12,
+          "m": 30000,
+          "r": 180,
           "drawR": 13,
           "label": "Планета",
           "count": 1
@@ -730,7 +730,7 @@
         "bodyId": "earth",
         "offset": {
           "x": 0,
-          "y": 15
+          "y": 45
         }
       }
     },
@@ -740,28 +740,28 @@
           "kind": "circle",
           "x": 0,
           "y": 0,
-          "radius": 6000
+          "radius": 7500
         }
       ],
-      "shipClearance": 100,
-      "bodyGap": 60
+      "shipClearance": 300,
+      "bodyGap": 180
     },
     "mission": {
       "type": "earth-return",
-      "maxCoordinateYears": 10000,
+      "maxCoordinateYears": 5000,
       "target": {
         "centre": {
           "kind": "body",
           "bodyId": "earth"
         },
-        "radius": 340
+        "radius": 800
       },
       "limits": {
         "earthYears": {
           "min": 500
         },
         "shipYears": {
-          "max": 200
+          "max": 300
         },
         "relativeSpeed": {
           "max": 300
