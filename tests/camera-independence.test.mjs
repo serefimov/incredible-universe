@@ -1,5 +1,6 @@
 import { earthClockBody } from '../src/clock-display.js';
 import { missionDisplay } from '../src/mission-display.js';
+import { trayCount } from '../src/tutorial.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
@@ -102,7 +103,7 @@ function current(placements) {
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8')
     .replace(/^import .*;$/gm, '');
   vm.runInNewContext(source, { document: h.document, performance: { now: () => now },
-    createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, levelFromSearch: () => null, createGame: () => {
+    createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, trayCount, levelFromSearch: () => null, createGame: () => {
       game = createGame();
       for (const p of placements) assert.equal(placeBody(game, ...p), true);
       return game;
