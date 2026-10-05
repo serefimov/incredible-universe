@@ -74,7 +74,7 @@ with sync_playwright() as p:
         page.wait_for_function('typeof inspectGame === "function"')
         page.wait_for_timeout(100)
         boxes = page.evaluate('''() => {
-          const ids = ['play','follow','info','tray-toggle','clocks','stage','controls'];
+          const ids = ['play','follow','info','tray-toggle','clocks','speed-meter','stage','controls'];
           const nodes = ids.map(id => document.getElementById(id));
           return nodes.map(n => {const r = n.getBoundingClientRect(); return {
             id:n.id || n.dataset.type, x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height};});
@@ -528,11 +528,18 @@ with sync_playwright() as p:
         for body in ref['placements']:
             drag(centre('[data-type=' + body['type'] + ']'),at(body['x'],body['y']))
         assert len(state()['configuration']['placed']) == 1, (level['id'],state())
+        assert page.locator('#speed-meter').is_visible()
+        if i == 2:
+            assert 'Относительная скорость' in page.locator('#speed-meter').inner_text()
+            assert '≤ 36' in page.locator('#speed-meter').inner_text()
         page.screenshot(path=str(OUTPUT / ('campaign-' + level['id'] + '-ready.png')))
         page.locator('#play').tap()
         page.wait_for_function('inspectGame().simulation.status !== "running"',timeout=45000)
         assert state()['simulation']['status'] == 'win', (level['id'],state()['simulation'])
         page.locator('#outcome-overlay').tap()
+        if i == 2:
+            assert '✓ ≤ 36' in page.locator('#speed-meter').inner_text()
+            assert page.locator('#speed-meter').evaluate('(n) => n.classList.contains("within-limit")')
         assert page.locator('#campaign-actions').is_visible()
         page.screenshot(path=str(OUTPUT / ('campaign-' + level['id'] + '-win.png')))
         if i < 6:
@@ -554,6 +561,9 @@ with sync_playwright() as p:
             page.goto(url + '/dist/game/index.html?mission=' + level['id'])
             assert page.locator('#title').inner_text() == level['title']
             assert page.locator('#mission-brief').is_visible()
+            assert page.locator('#speed-meter').is_visible()
+            speed_box=page.locator('#speed-meter').bounding_box()
+            assert speed_box['x'] >= 0 and speed_box['x']+speed_box['width'] <= width+0.1
             assert page.locator('#earth-clock').is_visible() == (level['id'] == 'earth-return')
             assert page.evaluate('document.documentElement.scrollWidth') <= width
             brief=page.locator('#mission-brief').bounding_box()

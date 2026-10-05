@@ -15,6 +15,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#05070d;color:#eef;fon
 #status{font-size:11px;color:#aeb9d3;max-width:45%;line-height:1.2}
 #clocks{display:flex;flex-wrap:wrap;gap:4px 16px;padding:4px max(10px,env(safe-area-inset-right)) 6px max(10px,env(safe-area-inset-left));background:#0b1020;color:#c7d1e8;font-size:13px;font-variant-numeric:tabular-nums}
 #clocks output{color:#fff}
+#speed-meter{font-size:12px}#speed-meter.within-limit{color:#81e1de}#speed-meter.outside-limit{color:#f0bf91}
 #top,#clocks,#controls{flex-shrink:0}
 #stage{position:relative;flex:1;min-height:0}
 #mission-brief{white-space:pre-line}

@@ -42,6 +42,9 @@ function updateUI() {
   follow.classList.toggle('tracking', simulation.status === 'running' && game.camera.follow);
   hint.hidden = simulation.status !== 'ready';
   const display = missionDisplay(game);
+  element('speed-meter').textContent = display.speed;
+  element('speed-meter').classList.toggle('within-limit', display.speedMet === true);
+  element('speed-meter').classList.toggle('outside-limit', display.speedMet === false);
   display.campaignComplete = campaignUI.update();
   element('mission-brief').textContent = [ready ? display.brief : '', display.tutorial].filter(Boolean).join('\n');
   element('mission-brief').hidden = !(ready && display.brief) && !display.tutorial;
