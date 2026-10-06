@@ -110,13 +110,17 @@ export function missionEvent(simulation, next, model, end, clocksAt) {
 
 export const RESULT_REASONS = Object.freeze({
   survived: 'Условие выживания выполнено', arrived: 'Все условия прибытия выполнены',
+  'speed-limit': 'Достигнут предел скорости игровой модели (c=1000)',
   collision: 'Столкновение', horizon: 'Истёк предел попытки',
   'ship-deadline': 'Истёк срок по часам корабля', 'earth-deadline': 'Истёк срок по земным часам',
 });
 
 export function makeResult(event, simulation) {
   return Object.freeze({ outcome: event.outcome, reason: event.reason,
-    message: RESULT_REASONS[event.reason], time: simulation.time,
+    message: event.reason === 'speed-limit'
+      ? `${event.speedLimitObserver === 'earth' ? 'Земля достигла' : 'Корабль достиг'} предела скорости игровой модели (c=1000). Измените расстановку после Сброса`
+      : RESULT_REASONS[event.reason], time: simulation.time,
+    ...(event.reason === 'speed-limit' ? {speedLimitObserver:event.speedLimitObserver} : {}),
     earthYears: simulation.earthYears, shipYears: simulation.shipYears,
     ...(simulation.collisionId ? { collisionId: simulation.collisionId } : {}) });
 }

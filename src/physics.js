@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { calculateClocks } from './clocks.js';
+import { calculateClocks, CLOCK_CONTRACT } from './clocks.js';
 import { missionEvent, verifyClockSegment, makeResult } from './missions.js';
 export function acceleration(object, bodies, model) {
   let ax = 0, ay = 0;
@@ -62,6 +62,10 @@ export function stepSimulation(simulation, model, dt = model.maxStep) {
   }
   const objects = [...simulation.bodies, simulation.ship];
   if (!objects.every(finiteObject)) { fail(simulation, 'Некорректное состояние тел'); return; }
+  if (Math.hypot(simulation.ship.vx, simulation.ship.vy) >= CLOCK_CONTRACT.lightSpeed ||
+      (simulation.earthObserver && Math.hypot(simulation.earthObserver.vx, simulation.earthObserver.vy) >= CLOCK_CONTRACT.lightSpeed)) {
+    fail(simulation, 'Исходная скорость наблюдателя должна быть меньше c'); return;
+  }
   // Commit only a finite, fully calculated step. Errors preserve the last valid state.
   const next = objects.map(object => ({ ...object }));
   for (let i = 0; i < objects.length; i++) {
@@ -86,6 +90,35 @@ export function stepSimulation(simulation, model, dt = model.maxStep) {
     }
   } catch (error) { fail(simulation, error.message); return; }
   const collisionEnd = fraction;
+  // Newtonian acceleration may leave the game's sub-c clock domain. In a
+  // mission this is an explicit loss at the last admissible state, not a
+  // clock/physics clamp or a partially committed invalid step.
+  const nextEarth = simulation.earthBinding
+    ? next.find(body => body.id === simulation.earthBinding.bodyId)
+    : simulation.earthObserver;
+  const limitObserver = Math.hypot(next.at(-1).vx, next.at(-1).vy) >= CLOCK_CONTRACT.lightSpeed ? 'ship'
+    : nextEarth && Math.hypot(nextEarth.vx, nextEarth.vy) >= CLOCK_CONTRACT.lightSpeed ? 'earth' : null;
+  if (simulation.mission && limitObserver) {
+    try { calculateClocks(simulation, objects, model, 0); }
+    catch (error) { fail(simulation, error.message); return; }
+    // An existing contact precedes the rejected velocity update. Contacts
+    // later in that update cannot precede its domain failure.
+    const contact = collisionId !== null && collisionEnd === 0;
+    if (contact) {
+      simulation.collisionId = collisionId;
+      simulation.collisionFraction = 0;
+    }
+    simulation.status = 'lose';
+    simulation.accumulator = 0;
+    simulation.result = makeResult({ outcome:'lose', reason:contact ? 'collision' : 'speed-limit',
+      speedLimitObserver:limitObserver }, simulation);
+    const {ship,trail} = simulation;
+    if (!trail.length || trail.at(-1).t !== simulation.time) {
+      trail.push({x:ship.x,y:ship.y,t:simulation.time});
+      if (trail.length > 1200) trail.shift();
+    }
+    return;
+  }
   const segment = f => next.map((object, i) => ({ ...object,
     x: f === 1 ? object.x : objects[i].x * (1 - f) + object.x * f,
     y: f === 1 ? object.y : objects[i].y * (1 - f) + object.y * f,

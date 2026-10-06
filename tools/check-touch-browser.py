@@ -635,6 +635,44 @@ with sync_playwright() as p:
             drag(at(body['x'],body['y']),centre('#tray-toggle'))
             assert not state()['configuration']['placed']
         print(f'PASS Earth return: pinch, finger offsets ±20 CSS px, three wins and removal {width}x{height}',flush=True)
+    # #48: a formerly failing placement is a real Lose, with no invalid clocks.
+    for width,height in [(390,844),(844,390)]:
+        page.set_viewport_size(dict(width=width,height=height))
+        page.goto(url+'/?mission=earth-return')
+        page.wait_for_function('typeof inspectGame === "function"')
+        drag(centre('[data-type=planet]'),at(-4000,1000))
+        assert len(state()['configuration']['placed'])==1
+        page.locator('#play').tap()
+        page.wait_for_function('inspectGame().simulation.status === "lose"')
+        result=state()['simulation']['result']
+        assert result['reason']=='speed-limit',result
+        assert state()['simulation']['error'] is None
+        assert 'предела скорости' in page.locator('#outcome-reason').inner_text()
+        assert page.locator('#outcome-overlay').evaluate('e => getComputedStyle(e).backgroundColor').startswith('rgba(87, 28, 39,')
+        page.screenshot(path=str(OUTPUT/f'speed-limit-{width}x{height}.png'))
+        page.locator('#outcome-overlay').tap()
+        before=state()['simulation']['shipYears']
+        point=centre('#c');drag(point,[point[0]+20,point[1]+20])
+        assert page.locator('#mission-brief').is_visible()
+        assert 'Сброс' in page.locator('#mission-brief').inner_text()
+        assert state()['simulation']['shipYears']==before
+        page.locator('#play').tap();page.locator('#follow').tap()
+        if page.locator('#tray').is_visible(): page.locator('#tray-toggle').tap()
+        page.mouse.move(*centre('#c'));page.mouse.wheel(0,2000);page.wait_for_timeout(80)
+        assert state()['simulation']['shipYears']==0
+        assert len(state()['configuration']['placed'])==1
+        drag(at(-4000,1000),centre('#tray-toggle'))
+        assert not state()['configuration']['placed']
+        if page.locator('#tray').is_visible(): page.locator('#tray-toggle').tap()
+        point=centre('#c');drag(point,[point[0],point[1]-120])
+        if not page.locator('#tray').is_visible(): page.locator('#tray-toggle').tap()
+        drag(centre('[data-type=planet]'),at(100,3900))
+        assert len(state()['configuration']['placed'])==1
+        page.locator('#play').tap()
+        page.wait_for_function('inspectGame().simulation.status === "win"')
+        assert page.locator('#outcome-overlay').evaluate('e => getComputedStyle(e).backgroundColor').startswith('rgba(18, 58, 53,')
+        page.locator('#outcome-overlay').tap()
+        print(f'PASS speed-limit Lose, camera, Reset, removal and reference Win {width}x{height}',flush=True)
     for width,height in [(320,568),(390,844),(844,390)]:
         page.set_viewport_size(dict(width=width,height=height))
         for level in authored:
