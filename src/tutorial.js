@@ -43,7 +43,7 @@ export function tutorialHint(game) {
   }
   if (step.until === 'collision') return `${step.text} Стрелка — направление; сверху — часы корабля. Приближение — два пальца или колесо.`;
   if (game.configuration.placed.length) return 'Планета на месте — Пуск. Сброс сохранит её: переставьте или верните в ящик.';
-  return `${step.text} Двигайте карту одним пальцем; приближайте двумя или колесом.`;
+  return 'Перетащите планету в зону. Приближение: два пальца / колесо.';
 }
 
 // Explanations for authored scenes, with Earth clocks only at an actual Earth.
