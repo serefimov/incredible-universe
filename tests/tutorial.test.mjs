@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createGame, createGameFromLevel, availableCount, validPlacement, placeBody, moveBody, removeBody, resetGame, startGame } from '../src/state.js';
 import { advanceFrame } from '../src/physics.js';
 import { tutorialHint, lessonText } from '../src/tutorial.js';
+import { createRenderer } from '../src/render.js';
 
 const level = JSON.parse(readFileSync(new URL('../levels/campaign.json', import.meta.url)))[0];
 function finish(game, schedule = [0.01]) {
@@ -102,4 +103,24 @@ test('подготовленные объяснения следуют LEVELS: �
   // Copy is introduced with an authored campaign identity, not in diagnostic examples.
   earth.level = {...earth.level, id:'training-5'};
   assert.match(lessonText(earth), /В этой миссии есть Земля/);
+});
+
+
+test('зоны размещения появляются только после выдачи планеты и сохраняются для её переноса', () => {
+  let regions = 0;
+  const context = new Proxy({ fill() { if (this.fillStyle === '#7badd512') regions++; } }, {
+    get: (object, key) => object[key] ?? (() => {}),
+    set: (object, key, value) => { object[key] = value; return true; },
+  });
+  const renderer = createRenderer({ getContext: () => context }, {
+    getBoundingClientRect: () => ({width:390,height:640}),
+  });
+  renderer.resize();
+  const game = createGameFromLevel(level);
+  const draw = () => { regions=0;renderer.draw(game,{});return regions; };
+  assert.equal(draw(),0);
+  finish(game); assert.equal(draw(),0);
+  resetGame(game); assert.equal(draw(),2);
+  assert.ok(placeBody(game,'planet',-110,-120));
+  assert.equal(draw(),2,'used tray card must not hide the region for an existing planet');
 });
