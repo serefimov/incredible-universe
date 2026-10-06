@@ -92,3 +92,11 @@ test('уменьшение анимаций и Reset отменяют тайме
   h.game.simulation.result={outcome:'lose',message:'Готово'};h.ui.update({terminal:true});
   h.ui.reset();assert.equal(h.timers.size,0);assert.equal(h.element('outcome-overlay').hidden,true);
 });
+
+
+test('напоминание Сброса остаётся видимым при обзоре карты после поражения', () => {
+  const h=harness();h.game.simulation.status='lose';h.input.state.pan={};
+  h.ui.paint();assert.equal(h.element('mission-brief').classList.contains('interacting'),false);
+  h.game.simulation.status='ready';h.ui.paint();
+  assert.equal(h.element('mission-brief').classList.contains('interacting'),true);
+});

@@ -80,3 +80,15 @@ test('Земля не появляется в свободной сцене ил
     assert.doesNotMatch(display.result,/Земля:/);
   }
 });
+
+
+test('после поражения Сброс объясняется на карте, после Сброса напоминание исчезает', () => {
+  const game=createGameFromLevel(movingLevel());
+  game.simulation.status='lose';
+  game.simulation.result={outcome:'lose',message:'Столкновение'};
+  const before=structuredClone(game);
+  assert.match(missionDisplay(game).guidance,/Сброс.*Карту можно двигать и приближать/);
+  assert.deepEqual(game,before);
+  resetGame(game);assert.equal(missionDisplay(game).guidance,'');
+  assert.match(missionDisplay(game).navigation,/два пальца.*колесо/);
+});

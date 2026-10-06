@@ -39,6 +39,7 @@ function updateUI() {
   element('play-label').textContent = ready ? 'Пуск' : 'Сброс';
   play.setAttribute('aria-label', ready ? 'Запустить симуляцию' : 'Сбросить опыт, сохранив расстановку');
   play.classList.toggle('resetting', !ready);
+  play.classList.toggle('needs-reset', ['lose', 'error', 'collision'].includes(simulation.status));
   follow.classList.toggle('tracking', simulation.status === 'running' && game.camera.follow);
   hint.hidden = simulation.status !== 'ready';
   const display = missionDisplay(game);
@@ -46,8 +47,9 @@ function updateUI() {
   element('speed-meter').classList.toggle('within-limit', display.speedMet === true);
   element('speed-meter').classList.toggle('outside-limit', display.speedMet === false);
   display.campaignComplete = campaignUI.update();
-  element('mission-brief').textContent = [ready ? display.brief : '', display.tutorial].filter(Boolean).join('\n');
-  element('mission-brief').hidden = !(ready && display.brief) && !display.tutorial;
+  element('mission-brief').textContent = [ready ? display.brief : '', display.tutorial, display.navigation, display.guidance].filter(Boolean).join('\n');
+  element('mission-brief').hidden = !(ready && display.brief) && !display.tutorial && !display.guidance;
+  element('mission-brief').classList.toggle('reset-notice', Boolean(display.guidance && simulation.status !== 'running'));
   element('mission-heading').textContent = display.heading;
   missionText.textContent = display.goal;
   element('conditions').textContent = display.conditions;

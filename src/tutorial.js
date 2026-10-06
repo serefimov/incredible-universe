@@ -41,9 +41,9 @@ export function tutorialHint(game) {
     if (s.status === 'win') return 'Получилось! Вы изменили окружение, а не управляли кораблём. Сброс сохранит планету для новой попытки.';
     return 'Попытка завершена. Нажмите Сброс, измените положение планеты и попробуйте снова.';
   }
-  if (step.until === 'collision') return `${step.text} Стрелка — направление; сверху — часы корабля.`;
+  if (step.until === 'collision') return `${step.text} Стрелка — направление; сверху — часы корабля. Приближение — два пальца или колесо.`;
   if (game.configuration.placed.length) return 'Планета на месте — Пуск. Сброс сохранит её: переставьте или верните в ящик.';
-  return `${step.text} Карта: 1 палец; масштаб: 2.`;
+  return 'Перетащите планету в зону. Приближение: два пальца / колесо.';
 }
 
 // Explanations for authored scenes, with Earth clocks only at an actual Earth.
