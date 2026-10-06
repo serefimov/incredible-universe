@@ -95,7 +95,7 @@ export function missionDisplay(game) {
       : '';
   const navigation = s.status === 'ready' && game.level && !game.tutorial ? 'Приближение: два пальца или колесо мыши.' : '';
   const brief = game.level?.id === 'training-3'
-    ? `Войдите в круг без столкновения со скоростью ${range(speedLimit)} относительно цели. Смотрите спидометр сверху: слишком быстрый вход ещё не победа.`
+    ? `Для победы: круг цели без столкновения и скорость ${range(speedLimit)} одновременно. Смотрите спидометр сверху.`
     : missionBrief(mission);
   return { guidance, navigation, speed: speedText, speedMet, tutorial: tutorialHint(game), brief,
     goal: game.level ? [game.level.title, game.level.description, lessonText(game)].filter(Boolean).join('\n') : '',
