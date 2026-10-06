@@ -45,6 +45,10 @@ export function createCampaignInterface(game, element, { onOpen = () => {}, prog
   element('campaign-close').addEventListener('click', close);
   element('campaign-return').addEventListener('click', open);
   document.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
+  element('campaign-next').addEventListener('click', () => {
+    const next = nextCampaignLevel(game.level?.id);
+    if (game.simulation.status === 'win' && next) globalThis.location.assign(`?mission=${next.id}`);
+  });
   let stamp;
   function update() {
     progress.markWin(game);
@@ -58,7 +62,7 @@ export function createCampaignInterface(game, element, { onOpen = () => {}, prog
     const next = nextCampaignLevel(game.level?.id);
     const nextLink = element('campaign-next');
     nextLink.hidden = !next;
-    if (next) { nextLink.href = `?mission=${next.id}`; nextLink.textContent = `Далее: ${next.title}`; }
+    if (next) nextLink.textContent = `Следующий уровень: ${next.title}`;
     element('campaign-finished').hidden = !won || !progress.complete;
     return won && progress.complete;
   }

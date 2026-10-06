@@ -87,7 +87,17 @@ export function missionDisplay(game) {
       : '💥 Столкновение. Полёт остановлен.';
     result += `\n${values.join('\n')}\nНажмите ↻ для новой попытки.`;
   }
-  return { speed: speedText, speedMet, tutorial: tutorialHint(game), brief: missionBrief(mission),
+  const terminal = Boolean(result);
+  const guidance = terminal && s.status !== 'win'
+    ? 'Для новой попытки нажмите ↻ Сброс внизу. Затем можно переставить планету. Карту можно двигать и приближать сейчас.'
+    : s.status === 'running' && insideTarget && speedMet === false
+      ? 'Корабль в цели, но скорость не подходит. Победа требует попасть в круг с допустимой скоростью одновременно. Полёт продолжается.'
+      : '';
+  const navigation = s.status === 'ready' && game.level && !game.tutorial ? 'Приближение: два пальца или колесо мыши.' : '';
+  const brief = game.level?.id === 'training-3'
+    ? `Войдите в круг без столкновения со скоростью ${range(speedLimit)} относительно цели. Смотрите спидометр сверху: слишком быстрый вход ещё не победа.`
+    : missionBrief(mission);
+  return { guidance, navigation, speed: speedText, speedMet, tutorial: tutorialHint(game), brief,
     goal: game.level ? [game.level.title, game.level.description, lessonText(game)].filter(Boolean).join('\n') : '',
     conditions: rows.join('\n'), feedback, result, terminal: Boolean(result),
     heading: s.status === 'win' ? '✓ Победа — условия и результат' :

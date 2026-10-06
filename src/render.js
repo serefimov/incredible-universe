@@ -3,6 +3,7 @@ import { worldToScreen } from './camera.js';
 import { validPlacement } from './state.js';
 import { resolveTarget } from './levels.js';
 import { earthClockBody } from './clock-display.js';
+import { trayCount } from './tutorial.js';
 
 export function createRenderer(canvas, stage) {
   const ctx = canvas.getContext('2d');
@@ -30,7 +31,8 @@ export function createRenderer(canvas, stage) {
       circle((i * 137.3) % W, (i * 73.7) % H, (i % 3) * 0.35 + 0.3, '#aeb9d3');
     }
     ctx.globalAlpha = 1;
-    if (game.level && simulation.status === 'ready') {
+    if (game.level && simulation.status === 'ready' &&
+        Object.keys(scenario.tray).some(type => trayCount(game, type) > 0)) {
       ctx.save(); ctx.setLineDash([4, 5]); ctx.strokeStyle = '#7badd599'; ctx.fillStyle = '#7badd512'; ctx.lineWidth = 1;
       for (const region of game.level.placement.regions) {
         if (region.kind === 'circle') {
