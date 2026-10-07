@@ -442,6 +442,7 @@ with sync_playwright() as p:
     page.locator('#info').tap()
     page.locator('#training-link').tap()
     page.wait_for_url('**/?mission=training-1')
+    page.locator('#title-start').click()
     assert page.locator('#title').inner_text() == 'Первое вмешательство'
     for width,height in [(390,844),(844,390)]:
         page.set_viewport_size(dict(width=width,height=height))
@@ -593,12 +594,14 @@ with sync_playwright() as p:
         if i < 6:
             page.locator('#campaign-next').tap()
             page.wait_for_url('**/?mission=' + authored[i+1]['id'])
+            page.locator('#title-start').click()
         else:
             assert page.locator('#campaign-next').is_hidden()
             assert page.locator('#campaign-finished').is_visible()
             assert state()['simulation']['earthYears'] >= 500
             assert state()['simulation']['shipYears'] <= 300
     page.reload()
+    page.locator('#title-start').click()
     page.locator('#levels').tap()
     assert '7 из 7' in page.locator('#campaign-progress').inner_text()
     assert all(link.inner_text().startswith('✓') for link in page.locator('#campaign-list a').all())
