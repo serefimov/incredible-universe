@@ -10,6 +10,7 @@ import { missionDisplay } from './mission-display.js';
 import { createInterface } from './interface.js';
 import { trayCount } from './tutorial.js';
 import { createCampaignInterface } from './campaign.js';
+import { createTitleScreen } from './title-screen.js';
 
 const element = id => document.getElementById(id);
 const canvas = element('c'), stage = element('stage');
@@ -127,4 +128,5 @@ function frame(now) {
 renderer.resize();
 new ResizeObserver(() => { input.cancel(); ui.cancelGesture?.(); renderer.resize(); }).observe(stage);
 updateUI();
+createTitleScreen(element);
 requestAnimationFrame(frame);

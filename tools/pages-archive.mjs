@@ -11,7 +11,13 @@ import { buildGame } from './build-game.mjs';
 const git = (repo, ...args) => execFileSync('git', args, { cwd: repo, stdio: 'pipe' }).toString().trim();
 const json = async path => JSON.parse(await readFile(path, 'utf8'));
 const escape = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
-const page = (title, content) => `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(title)}</title><style>body{font:16px system-ui;max-width:850px;margin:24px auto;padding:0 16px;line-height:1.5}li{margin:12px 0}a{overflow-wrap:anywhere}</style></head><body><h1>${escape(title)}</h1>${content}</body></html>\n`;
+const page = (title, content, prefix = '..') => `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(title)}</title>
+<meta name="description" content="Головоломка о гравитации, космосе и времени. Расставляйте небесные тела и найдите путь для корабля.">
+<meta property="og:title" content="${escape(title)}"><meta property="og:type" content="website">
+<meta property="og:image" content="https://serefimov.github.io/incredible-universe/assets/brand/source.jpg">
+<meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#05070d">
+<link rel="icon" type="image/svg+xml" href="${prefix}/assets/brand/icon.svg"><link rel="apple-touch-icon" href="${prefix}/assets/brand/apple-touch-icon.png">
+<style>body{font:16px system-ui;max-width:850px;margin:24px auto;padding:0 16px;line-height:1.5;background:#05070d;color:#dfeaff}li{margin:12px 0}a{overflow-wrap:anywhere;color:#81e1de}.brand{display:block;width:min(100%,360px);height:auto;margin:auto}h1{font-size:24px}</style></head><body><a href="${prefix}/"><img class="brand" src="${prefix}/assets/brand/emblem.svg" width="750" height="665" alt="The Incredible Universe"></a><h1>${escape(title)}</h1>${content}</body></html>\n`;
 const directories = async path => existsSync(path) ? (await readdir(path, { withFileTypes: true })).filter(e => e.isDirectory()).map(e => e.name) : [];
 
 const compareVersions = (a, b) => {
@@ -108,6 +114,7 @@ export async function mergeArchive(payload, archive) {
 
 export async function renderSite(archive, output) {
   await rm(output, { recursive: true, force: true }); await mkdir(output, { recursive: true });
+  await cp(fileURLToPath(new URL('../assets/brand/', import.meta.url)), resolve(output, 'assets/brand'), { recursive: true });
   const dev = await directories(resolve(archive, 'dev'));
   const releases = (await directories(resolve(archive, 'release'))).sort((a, b) => {
     const left = a.split('.').map(BigInt), right = b.split('.').map(BigInt);
@@ -129,9 +136,9 @@ export async function renderSite(archive, output) {
   entries.sort((a, b) => b.builtAt.localeCompare(a.builtAt));
   await writeFile(resolve(output, 'dev/index.html'), page('Dev — The Incredible Universe', `<p><a href="../">Главная</a></p><h2>Последние сборки веток</h2><ul>${branches}</ul><h2>Все сборки</h2><ul>${entries.map(e => `<li><a href="./${e.name}/">${escape(e.name)}</a> — ${escape(e.branch)} — ${escape(e.builtAt)} · <a href="${escape(e.source)}">коммит ${escape(e.commit.slice(0, 12))}</a></li>`).join('')}</ul>`));
   await writeFile(resolve(output, 'release/index.html'), page('Release — The Incredible Universe', `<p><a href="../">Главная</a></p><ul>${releases.map(version => `<li><a href="./${version}/">${version}</a></li>`).join('')}</ul>`));
-  await writeFile(resolve(output, 'index.html'), page('The Incredible Universe', '<p><a href="./dev/">Dev — тестировать изменения из веток</a></p><p><a href="./release/">Release — стабильные выпуски</a></p>'));
+  await writeFile(resolve(output, 'index.html'), page('The Incredible Universe', '<p>Головоломка о гравитации, космосе и времени. Расставляйте небесные тела и найдите путь для корабля.</p><p><a href="./dev/">Dev — тестировать изменения из веток</a></p><p><a href="./release/">Release — стабильные выпуски</a></p>', '.'));
   await writeFile(resolve(output, '.nojekyll'), '');
-  await writeFile(resolve(output, 'versions.html'), page('Версии', '<a href="./release/">Стабильные выпуски</a> · <a href="./dev/">Dev-сборки</a>'));
+  await writeFile(resolve(output, 'versions.html'), page('Версии', '<a href="./release/">Стабильные выпуски</a> · <a href="./dev/">Dev-сборки</a>', '.'));
   for (const version of releases) {
     await mkdir(resolve(output, version), { recursive: true });
     await writeFile(resolve(output, version, 'index.html'), page(version, `<meta http-equiv="refresh" content="0; url=../release/${version}/"><a href="../release/${version}/">Открыть ${version}</a>`));

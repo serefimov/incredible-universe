@@ -21,7 +21,7 @@ test('реальный кадровый цикл пропускает фон, о
     addEventListener: (name, fn) => { handlers[name] = fn; } };
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8')
     .replace(/^import .*;$/gm, '');
-  vm.runInNewContext(source, { document, performance: { now: () => now },
+  vm.runInNewContext(source, { createTitleScreen() {}, document, performance: { now: () => now },
     createGame: () => (game = createGame()), createCampaignInterface: () => ({update() {},close() {}}), createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, trayCount, levelFromSearch: () => null, resetGame, startGame, advanceFrame, discardFrameTime,
     followShip, createInput: () => ({ cancel() {}, state: {} }),
     createRenderer: () => ({ resize() {}, draw() {}, viewport: {} }),
@@ -79,7 +79,7 @@ test('уход в фон, Reset и Play отменяют реальные жес
     addEventListener: (name, fn) => { handlers[name] = fn; } };
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8').replace(/^import .*;$/gm, '');
   const viewport = { width: 1000, height: 694 };
-  vm.runInNewContext(source, { document, performance: { now: () => now },
+  vm.runInNewContext(source, { createTitleScreen() {}, document, performance: { now: () => now },
     createGame: () => (game = createGame()), createCampaignInterface: () => ({update() {},close() {}}), createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, trayCount, levelFromSearch: () => null, resetGame, startGame, advanceFrame, discardFrameTime, followShip,
     createInput: (...args) => (input = createInput(...args)),
     createRenderer: () => ({ viewport, resize() {}, draw() {} }),

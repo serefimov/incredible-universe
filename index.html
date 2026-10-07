@@ -3,11 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>The Incredible Universe — прототип</title>
+<title>The Incredible Universe — гравитационная головоломка</title>
+<meta name="description" content="Расставляйте небесные тела, меняйте траекторию корабля и решайте головоломки о гравитации, космосе и времени.">
+<meta name="theme-color" content="#05070d">
+<meta property="og:title" content="The Incredible Universe">
+<meta property="og:description" content="Расставляйте небесные тела, меняйте траекторию корабля и решайте головоломки о гравитации, космосе и времени.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://raw.githubusercontent.com/serefimov/incredible-universe/main/assets/brand/source.jpg">
+<meta property="og:image:alt" content="Иконка и эмблема The Incredible Universe: корабль, планета и гравитационный след">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="./assets/brand/icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="./assets/brand/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./assets/brand/apple-touch-icon.png">
 <link rel="stylesheet" href="./src/styles.css">
 </head>
 <body>
-<div id="wrap">
+<section id="title-screen" aria-label="The Incredible Universe">
+ <div class="title-content">
+  <img class="title-emblem" src="./assets/brand/emblem.svg" width="750" height="665" alt="The Incredible Universe — эмблема с планетой и кораблём">
+  <h1 class="visually-hidden">The Incredible Universe</h1>
+  <p>Гравитация. Космос. Время.</p>
+  <p class="title-description">Расставляйте небесные тела и найдите путь для корабля.</p>
+  <button id="title-start">Начать</button>
+  <noscript>Для игры включите JavaScript в браузере.</noscript>
+ </div>
+</section>
+<div id="wrap" inert>
  <div id="top">
   <div id="title">The Incredible Universe</div>
   <div id="status">готово</div>
