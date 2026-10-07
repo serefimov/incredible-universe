@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildGame, bundleHTML } from '../tools/build-game.mjs';
+import { buildGame, bundleHTML, inlineArtwork } from '../tools/build-game.mjs';
 import test from 'node:test';
 import vm from 'node:vm';
 
@@ -12,6 +12,7 @@ test('собирает реальную игру в один HTML без вне�
   assert.ok(html.includes('The Incredible Universe'));
   assert.ok(!/<script[^>]+src=/.test(html));
   assert.ok(!/<link[^>]+stylesheet/.test(html));
+  assert.ok(!/\b(?:src|href)="\.\/assets\/brand\//.test(html), 'Title and icons must be embedded');
   const source = html.match(/<script>([\s\S]*?)<\/script>/)[1];
   new vm.Script(source);
   assert.ok(readFileSync('index.html', 'utf8').includes('type="module"'));
@@ -43,4 +44,15 @@ test('JSON миссий встраивается из того же дерева
   const bundled = await bundleHTML(html, {script:'src/main.js',style:'src/styles.css'}, path => Buffer.from(files[path]));
   assert.match(bundled.toString(), /immutable-tag-mission/);
   assert.ok(!bundled.toString().includes('with {type:'));
+});
+
+
+test('оформление читается из переданного дерева и встраивается без внешних файлов', () => {
+  const paths = [];
+  const html = inlineArtwork('<img src="./assets/brand/emblem.svg"><link href="./assets/brand/icon.svg">', path => {
+    paths.push(path); return Buffer.from('<svg>immutable artwork</svg>');
+  });
+  assert.deepEqual(paths, ['assets/brand/emblem.svg', 'assets/brand/icon.svg']);
+  assert.ok(!html.includes('./assets/brand/'));
+  assert.match(html, /data:image\/svg\+xml;base64,/);
 });

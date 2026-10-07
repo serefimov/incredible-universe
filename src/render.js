@@ -3,9 +3,11 @@ import { worldToScreen } from './camera.js';
 import { validPlacement } from './state.js';
 import { resolveTarget } from './levels.js';
 import { earthClockBody } from './clock-display.js';
+import { createSky } from './sky.js';
 
 export function createRenderer(canvas, stage) {
   const ctx = canvas.getContext('2d');
+  const sky = createSky(canvas);
   const viewport = { width: 0, height: 0 };
   function resize() {
     const rect = stage.getBoundingClientRect();
@@ -15,6 +17,7 @@ export function createRenderer(canvas, stage) {
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    sky.resize(rect.width, rect.height, dpr);
   }
   function circle(x, y, r, fill, stroke) {
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill();
@@ -25,11 +28,7 @@ export function createRenderer(canvas, stage) {
     const { width: W, height: H } = viewport;
     const screen = (x, y) => worldToScreen(camera, viewport, x, y);
     ctx.clearRect(0, 0, W, H);
-    for (let i = 0; i < 110; i++) {
-      ctx.globalAlpha = 0.22 + (i % 5) * 0.1;
-      circle((i * 137.3) % W, (i * 73.7) % H, (i % 3) * 0.35 + 0.3, '#aeb9d3');
-    }
-    ctx.globalAlpha = 1;
+    sky.draw(ctx, W, H);
     if (game.level && simulation.status === 'ready') {
       ctx.save(); ctx.setLineDash([4, 5]); ctx.strokeStyle = '#7badd599'; ctx.fillStyle = '#7badd512'; ctx.lineWidth = 1;
       for (const region of game.level.placement.regions) {

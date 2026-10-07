@@ -9,6 +9,14 @@ export function validSourcePath(path) {
     !path.startsWith('/') && !path.split('/').some(part => !part || part === '.' || part === '..');
 }
 
+// Resolve artwork using the same reader as scripts, including immutable tags.
+// The standalone file must not fetch icons or its title artwork at runtime.
+export function inlineArtwork(html, read) {
+  const types = { svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg' };
+  return html.replace(/\b(src|href)="\.\/(assets\/brand\/[a-zA-Z0-9_-]+\.(svg|png|jpg))"/g,
+    (_, attribute, path, extension) => `${attribute}="data:${types[extension]};base64,${Buffer.from(read(path)).toString('base64')}"`);
+}
+
 // The reader may use the working tree or immutable blobs from a release tag.
 export async function bundleHTML(html, bundle, read) {
   if (!bundle) return html;
@@ -48,7 +56,7 @@ export async function bundleHTML(html, bundle, read) {
   if (/<\/style/i.test(css)) throw new Error('CSS содержит закрывающий тег style');
   source = source.replace(styleTag, () => `<style>\n${css}\n</style>`);
   source = source.replace(scriptTag, () => `<script>\n${result.outputFiles[0].text}\n</script>`);
-  return Buffer.from(source);
+  return Buffer.from(inlineArtwork(source, read));
 }
 
 export async function buildGame(repo) {

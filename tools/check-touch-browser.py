@@ -71,6 +71,13 @@ with sync_playwright() as p:
         page = context.new_page()
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto(url)
+        assert page.locator('#wrap').evaluate('(node) => node.inert')
+        page.wait_for_function('document.querySelector(".title-emblem").complete && document.querySelector(".title-emblem").naturalWidth > 0')
+        assert page.locator('#title-start').bounding_box()['height'] >= 44
+        page.screenshot(path=str(OUTPUT / f'title-{width}x{height}.png'))
+        page.locator('#title-start').click()
+        assert not page.locator('#wrap').evaluate('(node) => node.inert')
+        assert page.locator('#title-screen').is_hidden()
         page.wait_for_function('typeof inspectGame === "function"')
         page.wait_for_timeout(100)
         boxes = page.evaluate('''() => {
@@ -123,6 +130,7 @@ with sync_playwright() as p:
     page = context.new_page()
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.goto(url)
+    page.locator('#title-start').click()
     page.wait_for_function('typeof inspectGame === "function"')
     page.wait_for_timeout(100)
     cdp = context.new_cdp_session(page)
@@ -260,6 +268,7 @@ with sync_playwright() as p:
     touch('touchEnd', 1)
     print('PASS real browser touch cycle, pinch, cancellation, repeat and resize', flush=True)
     page.goto(url + '/?mission=test-navigation')
+    page.locator('#title-start').click()
     page.wait_for_function('typeof inspectGame === "function"')
     initial = state()['configuration']
     page.locator('#play').tap()
@@ -302,6 +311,7 @@ with sync_playwright() as p:
     assert state()['configuration'] == initial
     print('PASS running navigation: manual pan/pinch/wheel, clocks continue, resume follow and Reset', flush=True)
     page.goto(url + '/dist/game/index.html')
+    page.locator('#title-start').click()
     page.locator('#play').tap()
     page.wait_for_function('Number(document.getElementById("ship-time").textContent) > 0')
     page.locator('#play').tap()
@@ -309,6 +319,7 @@ with sync_playwright() as p:
     print('PASS standalone HTML Play and Reset', flush=True)
     # Mission examples are embedded into the same standalone HTML, without fetches.
     page.goto(url + '/dist/game/index.html?mission=example-survival')
+    page.locator('#title-start').click()
     assert page.locator('#mission-panel').is_hidden()
     page.locator('#info').tap()
     assert page.locator('#mission').is_visible()
@@ -335,6 +346,7 @@ with sync_playwright() as p:
     page.wait_for_function('document.getElementById("status").textContent.includes("Победа")')
     page.locator('#outcome-overlay').tap()
     page.goto(url + '/dist/game/index.html?mission=example-region')
+    page.locator('#title-start').click()
     page.locator('#play').tap()
     page.wait_for_function('document.getElementById("status").textContent.includes("Поражение")')
     page.locator('#outcome-overlay').tap()
@@ -342,11 +354,13 @@ with sync_playwright() as p:
     assert 'Столкновение' in page.locator('#result').inner_text()
     page.set_viewport_size({'width': 390, 'height': 844})
     page.goto(url + '/dist/game/index.html?mission=example-earth-return')
+    page.locator('#title-start').click()
     assert page.locator('#earth-clock').is_visible()
     assert page.locator('#ship-clock').is_visible()
     assert 'Земля' in page.locator('#earth-clock-label').inner_text()
     page.screenshot(path=str(OUTPUT / 'earth-mission.png'))
     page.goto(url + '/dist/game/index.html')
+    page.locator('#title-start').click()
     assert page.locator('#earth-clock').is_hidden()
     assert page.locator('#ship-clock').is_visible()
     page.locator('#follow').tap()
@@ -357,6 +371,7 @@ with sync_playwright() as p:
         page.set_viewport_size(dict(width=width, height=height))
         for mission in ['example-survival', 'example-speed-time', 'example-earth-return']:
             page.goto(url + '/dist/game/index.html?mission=' + mission)
+            page.locator('#title-start').click()
             assert page.locator('#mission-panel').is_hidden()
             page.locator('#info').tap()
             assert page.locator('#mission-panel').is_visible()
@@ -379,6 +394,7 @@ with sync_playwright() as p:
         print(f'PASS mission panels, scrolling and controls {width}x{height}', flush=True)
     page.set_viewport_size(dict(width=390, height=844))
     page.goto(url + '/?mission=test-long-ui')
+    page.locator('#title-start').click()
     page.wait_for_function('typeof inspectGame === "function"')
     page.locator('#info').tap()
     assert page.locator('#mission-body').evaluate('(n) => n.scrollHeight > n.clientHeight')
@@ -410,6 +426,7 @@ with sync_playwright() as p:
     print('PASS long task scrolling, early/fast entry continues, terminal panel and Reset', flush=True)
     page.emulate_media(reduced_motion='reduce')
     page.goto(url + '/dist/game/index.html?mission=example-survival')
+    page.locator('#title-start').click()
     page.locator('#play').tap()
     page.wait_for_function('document.getElementById("status").textContent.includes("Победа")')
     assert page.locator('#outcome-overlay').evaluate('(n) => getComputedStyle(n).transitionDuration') == '0s'
@@ -421,13 +438,16 @@ with sync_playwright() as p:
     print('PASS reduced motion keeps result after notification disappears', flush=True)
     # The first authored campaign level uses the same real touch UI and engine.
     page.goto(url + '/')
+    page.locator('#title-start').click()
     page.locator('#info').tap()
     page.locator('#training-link').tap()
     page.wait_for_url('**/?mission=training-1')
+    page.locator('#title-start').click()
     assert page.locator('#title').inner_text() == 'Первое вмешательство'
     for width,height in [(390,844),(844,390)]:
         page.set_viewport_size(dict(width=width,height=height))
         page.goto(url + '/?mission=training-1')
+        page.locator('#title-start').click()
         page.wait_for_function('typeof inspectGame === "function"')
         assert page.locator('#title').inner_text() == 'Первое вмешательство'
         assert page.locator('.card:visible').count() == 0
@@ -500,6 +520,7 @@ with sync_playwright() as p:
         assert state()['tutorial']['stepIndex'] == 1
         print(f'PASS first campaign level: collision, one-planet Win, Reset, move, return {width}x{height}', flush=True)
     page.goto(url + '/dist/game/index.html?mission=training-1')
+    page.locator('#title-start').click()
     assert page.locator('#title').inner_text() == 'Первое вмешательство'
     assert page.locator('.card:visible').count() == 0
     assert page.locator('#earth-clock').is_hidden()
@@ -510,6 +531,7 @@ with sync_playwright() as p:
     page.set_viewport_size(dict(width=1280,height=720))
     for mission, point in [('training-3',(-110,120)), ('training-6',(-100,-165))]:
         page.goto(url + '/?mission=' + mission)
+        page.locator('#title-start').click()
         page.wait_for_function('typeof inspectGame === "function"')
         sx,sy=centre('[data-type=planet]')
         page.mouse.move(sx,sy);page.mouse.down()
@@ -537,6 +559,7 @@ with sync_playwright() as p:
     authored = json.loads((ROOT / 'levels/campaign.json').read_text())
     page.set_viewport_size(dict(width=390,height=844))
     page.goto(url + '/?mission=training-2')
+    page.locator('#title-start').click()
     page.wait_for_function('typeof inspectGame === "function"')
     page.locator('#levels').tap()
     assert page.locator('#campaign-list a').count() == 7
@@ -571,12 +594,14 @@ with sync_playwright() as p:
         if i < 6:
             page.locator('#campaign-next').tap()
             page.wait_for_url('**/?mission=' + authored[i+1]['id'])
+            page.locator('#title-start').click()
         else:
             assert page.locator('#campaign-next').is_hidden()
             assert page.locator('#campaign-finished').is_visible()
             assert state()['simulation']['earthYears'] >= 500
             assert state()['simulation']['shipYears'] <= 300
     page.reload()
+    page.locator('#title-start').click()
     page.locator('#levels').tap()
     assert '7 из 7' in page.locator('#campaign-progress').inner_text()
     assert all(link.inner_text().startswith('✓') for link in page.locator('#campaign-list a').all())
@@ -585,6 +610,7 @@ with sync_playwright() as p:
     for width,height in [(390,844),(844,390)]:
         page.set_viewport_size(dict(width=width,height=height))
         page.goto(url + '/?mission=earth-return')
+        page.locator('#title-start').click()
         page.wait_for_function('typeof inspectGame === "function"')
         page.locator('#play').tap()
         page.wait_for_function('inspectGame().simulation.status !== "running"')
@@ -639,6 +665,7 @@ with sync_playwright() as p:
         page.set_viewport_size(dict(width=width,height=height))
         for level in authored:
             page.goto(url + '/dist/game/index.html?mission=' + level['id'])
+            page.locator('#title-start').click()
             assert page.locator('#title').inner_text() == level['title']
             assert page.locator('#mission-brief').is_visible()
             assert page.locator('#speed-meter').is_visible()

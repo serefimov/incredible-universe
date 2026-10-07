@@ -102,7 +102,7 @@ function current(placements) {
   const h = dom(); let game, now = 0, callback;
   const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8')
     .replace(/^import .*;$/gm, '');
-  vm.runInNewContext(source, { document: h.document, performance: { now: () => now },
+  vm.runInNewContext(source, { createTitleScreen() {}, document: h.document, performance: { now: () => now },
     createCampaignInterface: () => ({update() {},close() {}}), createInterface: () => ({ update() {}, reset() {}, closeTray() {}, closeInfo() {}, dismiss() {}, paint() {} }), earthClockBody, missionDisplay, trayCount, levelFromSearch: () => null, createGame: () => {
       game = createGame();
       for (const p of placements) assert.equal(placeBody(game, ...p), true);
